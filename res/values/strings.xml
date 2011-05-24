@@ -6,4 +6,5 @@
     <string name="picture_save_failed">Failed save picture</string>
     <string name="menu_exit">exit</string>
     <string name="menu_connect_device">Recent Device</string>
+    <string name="dialog_title">Select Device</string>
 </resources>

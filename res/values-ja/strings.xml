@@ -6,4 +6,5 @@
     <string name="picture_save_failed">写真の保存に失敗しました</string>
     <string name="menu_exit">終了</string>
     <string name="menu_connect_device">接続</string>
+    <string name="dialog_title">デバイスを選択して下さい</string>
 </resources>

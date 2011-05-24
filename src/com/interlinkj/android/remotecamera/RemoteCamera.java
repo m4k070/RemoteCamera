@@ -106,7 +106,7 @@ public class RemoteCamera extends Activity {
 				final String[] deviceNames = deviceList.toArray(new String[0]);
 				// 接続デバイス選択ダイアログを作成
 				mDialog = new AlertDialog.Builder(this)
-					.setTitle("Select device")
+					.setTitle(R.string.dialog_title)
 					.setItems(deviceNames, new DialogInterface.OnClickListener() {
 						// 選択されたデバイスのアドレスを取得し接続
 						public void onClick(DialogInterface dialoginterface, int i) {
@@ -256,7 +256,9 @@ public class RemoteCamera extends Activity {
 					new FileOutputStream(saveFilename);
 					fos.write(data);
 					fos.close();
-					Toast.makeText(mContext, saveFilename + "\n" + R.string.picture_save_success, Toast.LENGTH_LONG);
+					Toast.makeText(mContext,
+							saveFilename + Character.LINE_SEPARATOR + R.string.picture_save_success,
+							Toast.LENGTH_LONG);
 			} catch(Exception e) {
 				e.printStackTrace();
 				Toast.makeText(mContext, R.string.picture_save_failed, Toast.LENGTH_LONG);
