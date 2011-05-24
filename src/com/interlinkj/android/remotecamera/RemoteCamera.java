@@ -4,11 +4,24 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.Timer;
 
 import com.interlinkj.android.remotecamera.R;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.Camera;
@@ -16,6 +29,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,16 +38,23 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 public class RemoteCamera extends Activity {
 	public static final String TAG = "RemoteCamera";
-	public static final int MESSAGE_READ = 0;
+	public static final int MESSAGE_SHUTTER = 0;
+	public static final int MESSAGE_DIALOG_SHOW = 1;
+	public static final int REQUEST_ENABLE_BLUETOOTH = 1;
+	private static final String RECENT_DEVICE = "recent_device";
 
 	private Context mContext;
 	private Handler mHandler;
 	private Camera mCamera = null;
 	private Bitmap mBitmap;
 	private Preview mPreview;
+	private BluetoothAdapter mAdapter;
+	private BluetoothDevice mDevice;
+	private static AlertDialog mDialog;
 	
 	static {
 		System.loadLibrary("yuv420sp2rgb");
@@ -51,12 +72,7 @@ public class RemoteCamera extends Activity {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.main);
 
-		mContext = getApplicationContext();
-		mHandler = new ReceiveHandler();
-		((ReceiveHandler)mHandler).setShutterCallback(mShutterListener);
-		((ReceiveHandler)mHandler).setPictureCallback(mPictureCallback);
-		mPreview = (Preview)findViewById(R.id.surfaceView1);
-		mPreview.setHandler(mHandler);
+
 	}
 	
 	@Override
@@ -74,8 +90,49 @@ public class RemoteCamera extends Activity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()) {
-		case R.id.item1:
+		case R.id.item_exit:	// 終了
 			finish();
+			break;
+		case R.id.item_recent:	// Recent Device
+			// 規定の接続デバイスのアドレスを読み込み
+			final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+			String addr = prefs.getString(RECENT_DEVICE, null);
+			
+			if(null == addr) {	// 規定の接続デバイスが無い場合
+				List<String> deviceList = new ArrayList<String>();
+				for(BluetoothDevice device : mAdapter.getBondedDevices()) {
+					deviceList.add(device.getName());
+				}
+				final String[] deviceNames = deviceList.toArray(new String[0]);
+				// 接続デバイス選択ダイアログを作成
+				mDialog = new AlertDialog.Builder(this)
+					.setTitle("Select device")
+					.setItems(deviceNames, new DialogInterface.OnClickListener() {
+						// 選択されたデバイスのアドレスを取得し接続
+						public void onClick(DialogInterface dialoginterface, int i) {
+							String address = null;
+							for(BluetoothDevice device : mAdapter.getBondedDevices()) {
+								if(device.getName().equals(deviceNames[i])) {
+									address = device.getAddress();
+								}
+							}
+							// 規定の接続デバイスとして保存
+							Editor editor = prefs.edit();
+							editor.putString(RECENT_DEVICE, address);
+							editor.commit();
+							
+							connectDevice(address);
+						}
+					})
+					.create();
+				
+				// ダイアログ表示を実行させる
+				Message msg = mHandler.obtainMessage();
+				msg.what = MESSAGE_DIALOG_SHOW;
+				mHandler.sendMessage(msg);
+			} else {
+				connectDevice(addr);
+			}
 			break;
 		}
 		
@@ -85,6 +142,19 @@ public class RemoteCamera extends Activity {
 	@Override
 	public void onResume() {
 		super.onResume();
+		
+		mContext = getApplicationContext();
+		ReceiveHandler rHandler = new ReceiveHandler();
+		rHandler.setShutterCallback(mShutterListener);
+		rHandler.setPictureCallback(mPictureCallback);
+		rHandler.setJpegCallback(mJpegCallback);
+		mHandler = rHandler;
+		mPreview = (Preview)findViewById(R.id.surfaceView1);
+		mPreview.setHandler(mHandler);
+		
+		if(!ensureBluetooth()) {
+			ensureEnabled();
+		}
 	}
 	
 	@Override
@@ -92,6 +162,8 @@ public class RemoteCamera extends Activity {
 		super.onPause();
 		
 		closeCamera();
+		mDialog = null;
+		mHandler = null;
 	}
 	
 	public void setCamera(Camera c) {
@@ -108,6 +180,46 @@ public class RemoteCamera extends Activity {
 		}
 	}
 	
+	private void connectDevice(String addr) {
+		mDevice = mAdapter.getRemoteDevice(addr);
+		ConnectThread connectThread = new ConnectThread(mDevice);
+		connectThread.setHandler(mHandler);
+		connectThread.start();
+	}
+	
+	private boolean ensureBluetooth() {
+		mAdapter = BluetoothAdapter.getDefaultAdapter();
+		if(null == mAdapter) {
+			return false;
+		}
+		return true;
+	}
+	
+	private boolean ensureEnabled() {
+		if(!mAdapter.isEnabled()) {
+			Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			startActivityForResult(i, REQUEST_ENABLE_BLUETOOTH);
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		switch(requestCode) {
+		case REQUEST_ENABLE_BLUETOOTH:
+			if(resultCode == Activity.RESULT_OK) {
+				onBluetoothEnabled();
+				return;
+			}
+			break;
+		}
+	}
+
+	private void onBluetoothEnabled() {
+		ensureBluetooth();
+	}
+
 	private Camera.ShutterCallback mShutterListener = new Camera.ShutterCallback() {
 		public void onShutter() {
 			Log.i(TAG, "onShutter");
@@ -136,16 +248,20 @@ public class RemoteCamera extends Activity {
 	
 	private Camera.PictureCallback mJpegCallback = new Camera.PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
+			SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+			String saveFilename = Environment.getExternalStorageDirectory() +
+							"/Picture/" + fmt.format(new Date()) + ".jpg";
 			try {
 				FileOutputStream fos =
-					new FileOutputStream(Environment.getExternalStorageDirectory() + "/test.jpg");
+					new FileOutputStream(saveFilename);
 					fos.write(data);
 					fos.close();
-			} catch(FileNotFoundException e) {
+					Toast.makeText(mContext, saveFilename + "\n" + R.string.picture_save_success, Toast.LENGTH_LONG);
+			} catch(Exception e) {
 				e.printStackTrace();
-			} catch(IOException e) {
-				e.printStackTrace();
+				Toast.makeText(mContext, R.string.picture_save_failed, Toast.LENGTH_LONG);
 			}
+			camera.startPreview();
 		}
 	};
 	
@@ -187,8 +303,13 @@ public class RemoteCamera extends Activity {
 		
 		@Override
 		public void handleMessage(Message msg) {
-			if(MESSAGE_READ == msg.what) {
-				mmCamera.takePicture(mmShutterListener, null, mmJpegCallback);
+			switch(msg.what) {
+			case MESSAGE_SHUTTER:
+				mmCamera.autoFocus(null);
+				mmCamera.takePicture(null, null, mmJpegCallback);
+				break;
+			case MESSAGE_DIALOG_SHOW:
+				mDialog.show();
 			}
 		}
 	}
@@ -197,7 +318,7 @@ public class RemoteCamera extends Activity {
 		new View.OnTouchListener() {
 			public boolean onTouch(View view, MotionEvent motionevent) {
 				Message msg = mHandler.obtainMessage();
-				msg.what = MESSAGE_READ;
+				msg.what = MESSAGE_SHUTTER;
 				mHandler.sendMessage(msg);
 				return false;
 			}

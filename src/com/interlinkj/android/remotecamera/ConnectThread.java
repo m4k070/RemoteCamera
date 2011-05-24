@@ -5,12 +5,19 @@ import java.util.UUID;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.os.Handler;
 
 public class ConnectThread extends Thread {
 	private static final UUID SERIAL_PORT_PROFILE = UUID
 		.fromString("00001101-0000-1000-8000-00805F9B34FB");
 	private final BluetoothSocket mmSocket;
 	private final BluetoothDevice mmDevice;
+	private Handler mHandler;
+	private static ConnectedThread mConnectedThread;
+	
+	public void setHandler(Handler aHandler) { 
+		mHandler = aHandler;
+	}
 
 	public ConnectThread(BluetoothDevice device) {
 		// Use a temporary object that is later assigned to mmSocket,
@@ -57,7 +64,8 @@ public class ConnectThread extends Thread {
 	}
 	
 	public void manageConnectedSocket(BluetoothSocket mmSocket) {
-		ConnectedThread mConnectedThread = new ConnectedThread(mmSocket);
+		mConnectedThread = new ConnectedThread(mmSocket);
+		mConnectedThread.setHandler(mHandler);
 		mConnectedThread.start();
 	}
 }

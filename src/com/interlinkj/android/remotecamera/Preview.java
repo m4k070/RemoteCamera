@@ -14,7 +14,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import static com.interlinkj.android.remotecamera.RemoteCamera.TAG;
-import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_READ;
+import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_SHUTTER;
 
 public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -116,7 +116,7 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 		new Camera.AutoFocusCallback() {
 			public void onAutoFocus(boolean flag, Camera camera) {
 				Message msg = mHandler.obtainMessage();
-				msg.what = MESSAGE_READ;
+				msg.what = MESSAGE_SHUTTER;
 				mHandler.sendMessage(msg);
 			}
 		};

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
   xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/item1" android:title="exit" android:icon="@android:drawable/ic_lock_power_off" android:visible="true" android:enabled="true"></item>
+    <item android:visible="true" android:enabled="true" android:id="@+id/item_recent" android:title="@string/menu_connect_device"></item><item android:icon="@android:drawable/ic_lock_power_off" android:visible="true" android:enabled="true" android:id="@+id/item_exit" android:title="@string/menu_exit"></item>
+    
 </menu>

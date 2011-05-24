@@ -9,7 +9,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_READ;
+import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_SHUTTER;
 import static com.interlinkj.android.remotecamera.RemoteCamera.TAG;
 
 public class ConnectedThread extends Thread {
@@ -49,7 +49,7 @@ public class ConnectedThread extends Thread {
 				bytes = mmInStream.read(buffer);
 
 				// Send the obtained bytes to the UI Activity
-				Message msg = mmHandler.obtainMessage(MESSAGE_READ, bytes,
+				Message msg = mmHandler.obtainMessage(MESSAGE_SHUTTER, bytes,
 						-1, buffer);
 				if(!mmHandler.sendMessage(msg)) {
 					Log.e(TAG, "sendMessage Failed.");

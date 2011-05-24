@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="hello">Hello World, BluetoothCamera!</string>
-    <string name="app_name">BluetoothCamera</string>
+    <string name="app_name">RemoteCamera</string>
+    <string name="picture_save_success">Saved Picture</string>
+    <string name="picture_save_failed">Failed save picture</string>
+    <string name="menu_exit">exit</string>
+    <string name="menu_connect_device">Recent Device</string>
 </resources>
