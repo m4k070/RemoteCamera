@@ -7,4 +7,6 @@
     <string name="menu_exit">終了</string>
     <string name="menu_connect_device">接続</string>
     <string name="dialog_title">デバイスを選択して下さい</string>
+    <string name="bt_connect_failed">デバイス:%sへの接続に失敗しました</string>
+    <string name="bt_connect_success">デバイス:%sに接続しました</string>
 </resources>

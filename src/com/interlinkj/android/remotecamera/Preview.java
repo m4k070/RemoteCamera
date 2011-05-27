@@ -3,7 +3,6 @@ package com.interlinkj.android.remotecamera;
 import java.io.IOException;
 import java.util.List;
 
-import android.content.Context;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
 import android.os.Handler;
@@ -20,11 +19,14 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 
 	private Camera mCamera;
 	private SurfaceHolder mHolder;
-	private Context mContext;
+	private RemoteCamera mContext;
 	private Handler mHandler;
 	
 	public void setHandler(Handler aHandler) {
 		mHandler = aHandler;
+	}
+	public Handler getHandler() {
+		return mHandler;
 	}
 
 	/**
@@ -33,7 +35,7 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 	 * @param context
 	 * @param attrs
 	 */
-	public Preview(Context context, AttributeSet attrs) {
+	public Preview(RemoteCamera context, AttributeSet attrs) {
 		super(context, attrs);
 		Log.i(TAG, "new Preview");
 
@@ -92,7 +94,7 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 		Log.i(TAG, "Preview surfaceCreated");
 
 		mCamera = Camera.open();
-		((RemoteCamera)mContext).setCamera(mCamera);
+		mContext.setCamera(mCamera);
 		try {
 			mCamera.setPreviewDisplay(holder);
 		} catch (IOException e) {
@@ -103,21 +105,13 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		Log.i(TAG, "Preview surfaceDestroyed");
-		((RemoteCamera)mContext).closeCamera();
+		mContext.closeCamera();
 	}
 
 	public boolean onTouchEvent(MotionEvent event) {
-		mCamera.autoFocus(mAutofocusCallback);
+		Message msg = mHandler.obtainMessage();
+		msg.what = MESSAGE_SHUTTER;
+		mHandler.sendMessage(msg);
 		return true;	
 	}
-	
-	
-	private Camera.AutoFocusCallback mAutofocusCallback =
-		new Camera.AutoFocusCallback() {
-			public void onAutoFocus(boolean flag, Camera camera) {
-				Message msg = mHandler.obtainMessage();
-				msg.what = MESSAGE_SHUTTER;
-				mHandler.sendMessage(msg);
-			}
-		};
 }
