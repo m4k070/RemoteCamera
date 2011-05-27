@@ -31,9 +31,9 @@ public class ConnectThread extends Thread {
 		BluetoothSocket tmp = null;
 		mDevice = device;
 
-		// BluetoothSocket‚Ìì¬
+		// BluetoothSocketã®ä½œæˆ
 		try {
-			// UUID‚ğw’è‚µ‚Ärfcomm‚Ìƒ\ƒPƒbƒg‚ğì¬
+			// UUIDã‚’æŒ‡å®šã—ã¦rfcommã®ã‚½ã‚±ãƒƒãƒˆã‚’ä½œæˆ
 			tmp = device.createRfcommSocketToServiceRecord(SERIAL_PORT_PROFILE);
 		} catch(IOException e) {
 		}
@@ -41,20 +41,20 @@ public class ConnectThread extends Thread {
 	}
 
 	public void run() {
-		// ’ÊMŠJn‘O‚ÉƒfƒoƒCƒX‚Ì’Tõ‚ğ’†~‚³‚¹‚é
+		// é€šä¿¡é–‹å§‹å‰ã«ãƒ‡ãƒã‚¤ã‚¹ã®æ¢ç´¢ã‚’ä¸­æ­¢ã•ã›ã‚‹
 //		mAdapter.cancelDiscovery();
 
 		Message msg = mHandler.obtainMessage();
 		msg.obj = mDevice.getName();
 		try {
-			// ƒ\ƒPƒbƒg‚ğ—˜—p‚µ‚Ä’ÊM‚ğŠJn‚·‚é
+			// ã‚½ã‚±ãƒƒãƒˆã‚’åˆ©ç”¨ã—ã¦é€šä¿¡ã‚’é–‹å§‹ã™ã‚‹
 			mSocket.connect();
 
 			msg.what = MESSAGE_CONNECT_SUCCESS;
 			// Do work to manage the connection (in a separate thread)
 			manageConnectedSocket(mSocket);
 		} catch(IOException connectException) {
-			// —áŠO‚ª”­¶‚µ‚½ê‡‚Íƒ\ƒPƒbƒg‚ğ•Â‚¶ˆ—‚ğ”²‚¯‚é
+			// ä¾‹å¤–ãŒç™ºç”Ÿã—ãŸå ´åˆã¯ã‚½ã‚±ãƒƒãƒˆã‚’é–‰ã˜å‡¦ç†ã‚’æŠœã‘ã‚‹
 			try {
 				mSocket.close();
 			} catch(IOException closeException) {

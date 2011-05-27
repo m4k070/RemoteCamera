@@ -121,10 +121,10 @@ public class RemoteCamera extends Activity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()) {
-		case R.id.item_exit: // I—¹
+		case R.id.item_exit: // çµ‚äº†
 			finish();
 			break;
-		case R.id.item_recent: // Ú‘±
+		case R.id.item_recent: // æ¥ç¶š
 			if(isConnect || mAdapter == null) {
 				break;
 			}
@@ -177,25 +177,25 @@ public class RemoteCamera extends Activity {
 	}
 
 	private synchronized void startConnect() {
-		// ‹K’è‚ÌÚ‘±ƒfƒoƒCƒX‚ÌƒAƒhƒŒƒX‚ğ“Ç‚İ‚İ
+		// è¦å®šã®æ¥ç¶šãƒ‡ãƒã‚¤ã‚¹ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’èª­ã¿è¾¼ã¿
 		final SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(this);
 		String addr = prefs.getString(RECENT_DEVICE, null);
 
-		if(null == addr) { // ‹K’è‚ÌÚ‘±ƒfƒoƒCƒX‚ª–³‚¢ê‡
-			List<String> deviceList = new ArrayList<String>(); // ƒyƒAƒŠƒ“ƒOÏ‚İƒfƒoƒCƒX‚Ì–¼‘O‚ÌƒŠƒXƒg
+		if(null == addr) { // è¦å®šã®æ¥ç¶šãƒ‡ãƒã‚¤ã‚¹ãŒç„¡ã„å ´åˆ
+			List<String> deviceList = new ArrayList<String>(); // ãƒšã‚¢ãƒªãƒ³ã‚°æ¸ˆã¿ãƒ‡ãƒã‚¤ã‚¹ã®åå‰ã®ãƒªã‚¹ãƒˆ
 			for(BluetoothDevice device : mAdapter.getBondedDevices()) {
 				deviceList.add(device.getName());
 			}
-			// ”z—ñ‚Ö•ÏŠ·
+			// é…åˆ—ã¸å¤‰æ›
 			final String[] deviceNames = deviceList.toArray(new String[0]);
 
-			// Ú‘±ƒfƒoƒCƒX‘I‘ğƒ_ƒCƒAƒƒO‚ğì¬
+			// æ¥ç¶šãƒ‡ãƒã‚¤ã‚¹é¸æŠãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã‚’ä½œæˆ
 			mDialog = new AlertDialog.Builder(this)
-					.setTitle(R.string.dialog_title) // ƒ^ƒCƒgƒ‹
-					.setItems(deviceNames, // ‘I‘ğ€–Ú:ƒyƒAƒŠƒ“ƒOÏ‚İƒfƒoƒCƒX–¼
+					.setTitle(R.string.dialog_title) // ã‚¿ã‚¤ãƒˆãƒ«
+					.setItems(deviceNames, // é¸æŠé …ç›®:ãƒšã‚¢ãƒªãƒ³ã‚°æ¸ˆã¿ãƒ‡ãƒã‚¤ã‚¹å
 							new DialogInterface.OnClickListener() {
-								// ‘I‘ğ‚³‚ê‚½ƒfƒoƒCƒX‚ÌƒAƒhƒŒƒX‚ğæ“¾‚µÚ‘±
+								// é¸æŠã•ã‚ŒãŸãƒ‡ãƒã‚¤ã‚¹ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—ã—æ¥ç¶š
 								public void onClick(DialogInterface di, int i) {
 									String address = null;
 									for(BluetoothDevice device : mAdapter
@@ -205,7 +205,7 @@ public class RemoteCamera extends Activity {
 											address = device.getAddress();
 										}
 									}
-									// ‹K’è‚ÌÚ‘±ƒfƒoƒCƒX‚Æ‚µ‚Ä•Û‘¶
+									// è¦å®šã®æ¥ç¶šãƒ‡ãƒã‚¤ã‚¹ã¨ã—ã¦ä¿å­˜
 									Editor editor = prefs.edit();
 									editor.putString(RECENT_DEVICE, address);
 									editor.commit();
@@ -214,7 +214,7 @@ public class RemoteCamera extends Activity {
 								}
 							}).create();
 
-			// ƒ_ƒCƒAƒƒO•\¦‚ğÀs‚³‚¹‚é
+			// ãƒ€ã‚¤ã‚¢ãƒ­ã‚°è¡¨ç¤ºã‚’å®Ÿè¡Œã•ã›ã‚‹
 			Message msg = mHandler.obtainMessage();
 			msg.what = MESSAGE_DIALOG_SHOW;
 			mHandler.sendMessage(msg);
@@ -328,7 +328,7 @@ public class RemoteCamera extends Activity {
 		public void onPreviewFrame(byte[] data, Camera camera) {
 			Log.i(TAG, "onPreviewFrame");
 
-			// ƒvƒŒƒrƒ…[‰æ‘œ‚ğYUV420‚©‚çRGB‚É•ÏŠ·
+			// ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ç”»åƒã‚’YUV420ã‹ã‚‰RGBã«å¤‰æ›
 			Camera.Size size = camera.getParameters().getPreviewSize();
 			int[] rgb = new int[size.width * size.height];
 //			decodeYUV420SP(rgb, data, size.width, size.height);
@@ -418,13 +418,13 @@ public class RemoteCamera extends Activity {
 	 * YUV420SP to BMP
 	 * 
 	 * @param rgb
-	 *            o—ÍŒ‹‰Ê‚ª•Û‘¶‚³‚ê‚é”z—ñ
+	 *            å‡ºåŠ›çµæœãŒä¿å­˜ã•ã‚Œã‚‹é…åˆ—
 	 * @param yuv420sp
-	 *            •ÏŠ·Œ³ƒf[ƒ^
+	 *            å¤‰æ›å…ƒãƒ‡ãƒ¼ã‚¿
 	 * @param width
-	 *            ‰æ‘œ‚Ì•
+	 *            ç”»åƒã®å¹…
 	 * @param height
-	 *            ‰æ‘œ‚Ì‚‚³
+	 *            ç”»åƒã®é«˜ã•
 	 */
 	public static void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width,
 			int height) {

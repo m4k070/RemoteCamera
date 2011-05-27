@@ -30,7 +30,7 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	/**
-	 * ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	 * ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	 * 
 	 * @param context
 	 * @param attrs
@@ -59,7 +59,7 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 //			} else {
 //				parameters.setPreviewFormat(ImageFormat.NV21);
 //			}
-			// ƒvƒŒƒrƒ…[ƒTƒCƒY
+			// ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚µã‚¤ã‚º
 			List<Size> supportedSizes = parameters.getSupportedPreviewSizes();
 			if(supportedSizes != null) {
 				Size previewSize = supportedSizes.get(0);
@@ -67,15 +67,15 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 			} else {
 				parameters.setPreviewSize(width, height);				
 			}
-			// ‰æ‘œƒTƒCƒY
+			// ç”»åƒã‚µã‚¤ã‚º
 			List<Size> supportedPictSizes = parameters.getSupportedPictureSizes();
 			if(supportedPictSizes != null) {
 				Size pictSize = supportedPictSizes.get(0);
 				parameters.setPictureSize(pictSize.width, pictSize.height);
 			}
-			// Android‚ÌƒJƒƒ‰‚Í‰¡Œü‚«ê—p
+			// Androidã®ã‚«ãƒ¡ãƒ©ã¯æ¨ªå‘ãå°‚ç”¨
 			parameters.set("orientation", "landscape");
-			// ƒtƒH[ƒJƒXƒ‚[ƒh
+			// ãƒ•ã‚©ãƒ¼ã‚«ã‚¹ãƒ¢ãƒ¼ãƒ‰
 			parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
 			try {
 				mCamera.setParameters(parameters);

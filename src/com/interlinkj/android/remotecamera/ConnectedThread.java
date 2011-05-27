@@ -21,7 +21,7 @@ public class ConnectedThread extends Thread {
 		final byte[] buffer = new byte[1024]; // buffer store for the stream
 		int bytes; // bytes returned from read()
 
-		// —áŠO‚ª”­¶‚·‚é‚Ü‚ÅóMˆ—‚ğ‘±‚¯‚é
+		// ä¾‹å¤–ãŒç™ºç”Ÿã™ã‚‹ã¾ã§å—ä¿¡å‡¦ç†ã‚’ç¶šã‘ã‚‹
 		while(true) {
 			// Read from the InputStream
 			bytes = BluetoothConnection.getInstance().read(buffer);
