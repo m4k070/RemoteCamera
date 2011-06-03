@@ -11,7 +11,6 @@ import android.os.Message;
 import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_CONNECT_FAILED;
 import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_CONNECT_SUCCESS;
 
-;
 
 public class ConnectThread extends Thread {
 	private static final UUID SERIAL_PORT_PROFILE = UUID

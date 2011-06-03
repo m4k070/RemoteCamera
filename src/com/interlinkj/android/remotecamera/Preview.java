@@ -60,13 +60,10 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 //				parameters.setPreviewFormat(ImageFormat.NV21);
 //			}
 			// プレビューサイズ
-			List<Size> supportedSizes = parameters.getSupportedPreviewSizes();
-			if(supportedSizes != null) {
-				Size previewSize = supportedSizes.get(0);
-				parameters.setPreviewSize(previewSize.width, previewSize.height);
-			} else {
-				parameters.setPreviewSize(width, height);				
-			}
+			Size optimalSize = getOptimalPreviewSize(
+					parameters.getSupportedPreviewSizes(),
+					width, height);
+			parameters.setPreviewSize(optimalSize.width, optimalSize.height);				
 			// 画像サイズ
 			List<Size> supportedPictSizes = parameters.getSupportedPictureSizes();
 			if(supportedPictSizes != null) {
@@ -75,8 +72,6 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 			}
 			// Androidのカメラは横向き専用
 			parameters.set("orientation", "landscape");
-			// フォーカスモード
-			parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
 			try {
 				mCamera.setParameters(parameters);
 				mCamera.setPreviewDisplay(holder);
@@ -95,6 +90,16 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 
 		mCamera = Camera.open();
 		mContext.setCamera(mCamera);
+		Camera.Parameters param = mCamera.getParameters();
+		// フォーカスモード
+		List<String> focusModes = param.getSupportedFocusModes();
+		if(focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+			param.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+			mContext.setUseAutofocus(true);
+		} else {
+			param.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
+			mContext.setUseAutofocus(false);
+		}
 		try {
 			mCamera.setPreviewDisplay(holder);
 		} catch (IOException e) {
@@ -114,4 +119,37 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 		mHandler.sendMessage(msg);
 		return true;	
 	}
+	
+	private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
+        final double ASPECT_TOLERANCE = 0.05;
+        double targetRatio = (double) w / h;
+        if (sizes == null) return null;
+
+        Size optimalSize = null;
+        double minDiff = Double.MAX_VALUE;
+
+        int targetHeight = h;
+
+        // Try to find an size match aspect ratio and size
+        for (Size size : sizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+            if (Math.abs(size.height - targetHeight) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+
+        // Cannot find the one match the aspect ratio, ignore the requirement
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Size size : sizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
+        return optimalSize;
+    }
 }

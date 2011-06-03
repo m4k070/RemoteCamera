@@ -58,6 +58,7 @@ public class RemoteCamera extends Activity {
 	private boolean isConnect = false;
 	private byte[] mPreviewBuffer;
 	private BluetoothConnection mConnection;
+	private boolean mUseAutofocus;
 
 	static {
 		System.loadLibrary("yuv420sp2rgb");
@@ -65,12 +66,21 @@ public class RemoteCamera extends Activity {
 
 	public native void yuv420sp2rgb(int[] rgb, byte[] yuv420sp, int width,
 			int height, int type);
-	
+
 	public synchronized byte[] getPreviewBuffer() {
 		return mPreviewBuffer;
 	}
+
 	public synchronized void setPreviewBuffer(byte[] aBuf) {
 		mPreviewBuffer = aBuf;
+	}
+
+	public boolean isUseAutofocus() {
+		return mUseAutofocus;
+	}
+
+	public void setUseAutofocus(boolean flag) {
+		mUseAutofocus = flag;
 	}
 
 	/** Called when the activity is first created. */
@@ -83,14 +93,16 @@ public class RemoteCamera extends Activity {
 		window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.main);
-		
+
 		if(!ensureBluetooth()) {
-			Toast.makeText(this, "Device does not support Bluetooth", Toast.LENGTH_LONG);
+			Toast.makeText(this, "Device does not support Bluetooth",
+					Toast.LENGTH_LONG).show();
 		}
-		if(ensureEnabled()) {
-			Toast.makeText(this, "Bluetooth is not enable", Toast.LENGTH_LONG);
+		if(!ensureEnabled()) {
+			Toast.makeText(this, "Bluetooth is not enable", Toast.LENGTH_LONG)
+					.show();
 		}
-		
+
 		mContext = getApplicationContext();
 		ReceiveHandler rHandler = new ReceiveHandler();
 		rHandler.setShutterCallback(mShutterListener);
@@ -338,7 +350,7 @@ public class RemoteCamera extends Activity {
 			mBitmap.setPixels(rgb, 0, size.width, 0, 0, size.width, size.height);
 		}
 	};
-	
+
 	private Camera.PreviewCallback mPreviewCallback2 = new Camera.PreviewCallback() {
 		public void onPreviewFrame(byte[] data, Camera camera) {
 			BluetoothConnection connect = BluetoothConnection.getInstance();
@@ -381,8 +393,12 @@ public class RemoteCamera extends Activity {
 			switch(msg.what) {
 			case MESSAGE_SHUTTER:
 				if(null != mmCamera) {
-					mmCamera.autoFocus(null);
-					mmCamera.takePicture(null, null, mmJpegCallback);
+					if(mContext.isUseAutofocus()) {
+						mmCamera.cancelAutoFocus();
+						mmCamera.autoFocus(mAutofocusCallback);
+					} else {
+						mmCamera.takePicture(null, null, mmJpegCallback);
+					}
 				}
 				break;
 			case MESSAGE_DIALOG_SHOW:
@@ -403,6 +419,15 @@ public class RemoteCamera extends Activity {
 				break;
 			}
 		}
+
+		private Camera.AutoFocusCallback mAutofocusCallback = new Camera.AutoFocusCallback() {
+			@Override
+			public void onAutoFocus(boolean success, Camera aCamera) {
+				if(success) {
+					aCamera.takePicture(null, null, mmJpegCallback);
+				}
+			}
+		};
 	}
 
 	private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
