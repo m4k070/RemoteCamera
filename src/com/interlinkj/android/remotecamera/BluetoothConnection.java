@@ -18,7 +18,7 @@ public class BluetoothConnection {
 	private InputStream mInStream;
 	private boolean mConnectFlag = false;
 
-	public synchronized void setSocket(BluetoothSocket aSocket) {
+	public void setSocket(BluetoothSocket aSocket) {
 		mSocket = aSocket;
 
 		try {
@@ -30,15 +30,15 @@ public class BluetoothConnection {
 		}
 	}
 
-	public synchronized BluetoothSocket getSocket() {
+	public BluetoothSocket getSocket() {
 		return mSocket;
 	}
 	
-	public synchronized boolean isConnecting() {
+	public boolean isConnecting() {
 		return mConnectFlag;
 	}
 	
-	public synchronized int read(byte[] aBuf) {
+	public int read(byte[] aBuf) {
 		int count = 0;
 		
 		try {
@@ -50,7 +50,7 @@ public class BluetoothConnection {
 		return count;
 	}
 	
-	public synchronized void write(byte[] aBuf) {
+	public void write(byte[] aBuf) {
 		try {
 			mOutStream.write(aBuf);
 		} catch(Exception e) {
@@ -58,7 +58,7 @@ public class BluetoothConnection {
 		}
 	}
 	
-	public synchronized void close() {
+	public void close() {
 		try {
 			mSocket.close();
 			mConnectFlag = false;

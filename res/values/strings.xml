@@ -9,4 +9,6 @@
     <string name="dialog_title">Select Device</string>
     <string name="bt_connect_failed">Device:%s connect failed</string>
     <string name="bt_connect_success">Device:%s connect success</string>
+    <string name="accept">Accept</string>
+    <string name="accepting">accepting</string>
 </resources>

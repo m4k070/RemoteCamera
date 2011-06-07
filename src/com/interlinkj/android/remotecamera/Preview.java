@@ -37,18 +37,18 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 	 */
 	public Preview(RemoteCamera context, AttributeSet attrs) {
 		super(context, attrs);
-		Log.i(TAG, "new Preview");
+//		Log.i(TAG, "new Preview");
 
 		mContext = context;
 
 		mHolder = getHolder();
 		mHolder.addCallback(this);
 		mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-		Log.i(TAG, "end");
+//		Log.i(TAG, "end");
 	}
 
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-		Log.i(TAG, "Preview surfaceChanged");
+//		Log.i(TAG, "Preview surfaceChanged");
 		
 		if (mCamera != null) {
 			mCamera.stopPreview();
@@ -76,9 +76,9 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 				mCamera.setParameters(parameters);
 				mCamera.setPreviewDisplay(holder);
 			} catch (IOException e) {
-				Log.e(TAG, "IOException");
+//				Log.e(TAG, "IOException");
 			} catch (RuntimeException e) {
-				Log.e(TAG, "RuntimeException");
+//				Log.e(TAG, "RuntimeException");
 			}
 			mCamera.startPreview();
 			mCamera.autoFocus(null);
@@ -86,7 +86,7 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	public void surfaceCreated(SurfaceHolder holder) {
-		Log.i(TAG, "Preview surfaceCreated");
+//		Log.i(TAG, "Preview surfaceCreated");
 
 		mCamera = Camera.open();
 		mContext.setCamera(mCamera);
@@ -103,13 +103,13 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 		try {
 			mCamera.setPreviewDisplay(holder);
 		} catch (IOException e) {
-			Log.e(TAG, "IOException");
+//			Log.e(TAG, "IOException");
 			e.printStackTrace();
 		}
 	}
 
 	public void surfaceDestroyed(SurfaceHolder holder) {
-		Log.i(TAG, "Preview surfaceDestroyed");
+//		Log.i(TAG, "Preview surfaceDestroyed");
 		mContext.closeCamera();
 	}
 

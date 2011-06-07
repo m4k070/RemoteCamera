@@ -1,7 +1,10 @@
 package com.interlinkj.android.remotecamera;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -92,7 +95,7 @@ public class RemoteCamera extends Activity {
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		setContentView(R.layout.main);
+		setContentView(R.layout.camera);
 
 		if(!ensureBluetooth()) {
 			Toast.makeText(this, "Device does not support Bluetooth",
@@ -121,7 +124,7 @@ public class RemoteCamera extends Activity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.menu, menu);
+		inflater.inflate(R.menu.camera, menu);
 		return true;
 	}
 
@@ -133,7 +136,7 @@ public class RemoteCamera extends Activity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()) {
-		case R.id.item_exit: // 終了
+		case R.id.item_camera_exit: // 終了
 			finish();
 			break;
 		case R.id.item_recent: // 接続
@@ -304,13 +307,13 @@ public class RemoteCamera extends Activity {
 
 	private Camera.ShutterCallback mShutterListener = new Camera.ShutterCallback() {
 		public void onShutter() {
-			Log.i(TAG, "onShutter");
+//			Log.i(TAG, "onShutter");
 		}
 	};
 
 	private Camera.PictureCallback mPictureCallback = new Camera.PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
-			Log.i(TAG, "onPictureTaken");
+//			Log.i(TAG, "onPictureTaken");
 
 			if(null == data) {
 				return;
@@ -331,14 +334,21 @@ public class RemoteCamera extends Activity {
 	private Camera.PictureCallback mJpegCallback = new Camera.PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
 			saveJpegToStorage(data);
-
+			
 			camera.startPreview();
+			/*
+			WriteThread writeThread = new WriteThread(data); 
+			writeThread.start();
+			try {
+				writeThread.join();
+			} catch(InterruptedException e) { }
+			*/
 		}
 	};
 
 	private Camera.PreviewCallback mPreviewCallback = new Camera.PreviewCallback() {
 		public void onPreviewFrame(byte[] data, Camera camera) {
-			Log.i(TAG, "onPreviewFrame");
+//			Log.i(TAG, "onPreviewFrame");
 
 			// プレビュー画像をYUV420からRGBに変換
 			Camera.Size size = camera.getParameters().getPreviewSize();
@@ -354,10 +364,24 @@ public class RemoteCamera extends Activity {
 	private Camera.PreviewCallback mPreviewCallback2 = new Camera.PreviewCallback() {
 		public void onPreviewFrame(byte[] data, Camera camera) {
 			BluetoothConnection connect = BluetoothConnection.getInstance();
-			if(connect.isConnecting()) {
-				Log.i(TAG, "onPreviewFrame2");
-				connect.write(data);
+			if(!connect.isConnecting()) {
+				return;
 			}
+			
+			Camera.Size size = camera.getParameters().getPreviewSize();
+			int[] rgb = new int[size.width * size.height];
+			yuv420sp2rgb(rgb, data, size.width, size.height, 1);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream dos = new DataOutputStream(baos);
+			try {
+				dos.writeInt(size.width);
+				dos.writeInt(size.height);
+				for(int i : rgb) {
+					dos.writeInt(i);
+				}
+			} catch(IOException e) { }
+//			Log.i(TAG, "onPreviewFrame2");
+			connect.write(baos.toByteArray());
 		}
 	};
 
@@ -453,7 +477,7 @@ public class RemoteCamera extends Activity {
 	 */
 	public static void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width,
 			int height) {
-		Log.i(TAG, "decodeYUV420SP");
+//		Log.i(TAG, "decodeYUV420SP");
 		final int frameSize = width * height;
 
 		try {
@@ -491,9 +515,9 @@ public class RemoteCamera extends Activity {
 				}
 			}
 		} catch(Exception e) {
-			Log.e(TAG, "Exception");
+//			Log.e(TAG, "Exception");
 		}
 
-		Log.i(TAG, "end decode");
+//		Log.i(TAG, "end decode");
 	}
 }
