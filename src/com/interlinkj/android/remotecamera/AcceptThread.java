@@ -59,4 +59,10 @@ public class AcceptThread extends Thread {
 		mHandler.sendMessage(msg);
 
 	}
+	
+	public void cancel() {
+		try {
+			mServerSocket.close();
+		} catch(IOException e) { }
+	}
 }

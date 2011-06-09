@@ -9,22 +9,31 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import static com.interlinkj.android.remotecamera.RemoteCamera.TAG;
 import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_SHUTTER;
 
-public class Preview extends SurfaceView implements SurfaceHolder.Callback {
+/**
+ * カメラ側プレビュー用SurfaceView
+ * 
+ * @author Ito
+ * 
+ */
+public class CameraPreview extends SurfaceView implements
+		SurfaceHolder.Callback {
 
 	private Camera mCamera;
 	private SurfaceHolder mHolder;
 	private RemoteCamera mContext;
 	private Handler mHandler;
-	
+
 	public void setHandler(Handler aHandler) {
 		mHandler = aHandler;
 	}
+
 	public Handler getHandler() {
 		return mHandler;
 	}
@@ -35,22 +44,21 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 	 * @param context
 	 * @param attrs
 	 */
-	public Preview(RemoteCamera context, AttributeSet attrs) {
+	public CameraPreview(RemoteCamera context, AttributeSet attrs) {
 		super(context, attrs);
-//		Log.i(TAG, "new Preview");
 
 		mContext = context;
 
 		mHolder = getHolder();
 		mHolder.addCallback(this);
 		mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-//		Log.i(TAG, "end");
 	}
 
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+	public void surfaceChanged(SurfaceHolder holder, int format, int width,
+			int height) {
 //		Log.i(TAG, "Preview surfaceChanged");
-		
-		if (mCamera != null) {
+
+		if(mCamera != null) {
 			mCamera.stopPreview();
 			Camera.Parameters parameters = mCamera.getParameters();
 //			List<Integer>supportedFormats = parameters.getSupportedPreviewFormats();
@@ -61,11 +69,11 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 //			}
 			// プレビューサイズ
 			Size optimalSize = getOptimalPreviewSize(
-					parameters.getSupportedPreviewSizes(),
-					width, height);
-			parameters.setPreviewSize(optimalSize.width, optimalSize.height);				
+					parameters.getSupportedPreviewSizes(), width, height);
+			parameters.setPreviewSize(optimalSize.width, optimalSize.height);
 			// 画像サイズ
-			List<Size> supportedPictSizes = parameters.getSupportedPictureSizes();
+			List<Size> supportedPictSizes = parameters
+					.getSupportedPictureSizes();
 			if(supportedPictSizes != null) {
 				Size pictSize = supportedPictSizes.get(0);
 				parameters.setPictureSize(pictSize.width, pictSize.height);
@@ -75,9 +83,9 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 			try {
 				mCamera.setParameters(parameters);
 				mCamera.setPreviewDisplay(holder);
-			} catch (IOException e) {
+			} catch(IOException e) {
 //				Log.e(TAG, "IOException");
-			} catch (RuntimeException e) {
+			} catch(RuntimeException e) {
 //				Log.e(TAG, "RuntimeException");
 			}
 			mCamera.startPreview();
@@ -102,7 +110,7 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 		}
 		try {
 			mCamera.setPreviewDisplay(holder);
-		} catch (IOException e) {
+		} catch(IOException e) {
 //			Log.e(TAG, "IOException");
 			e.printStackTrace();
 		}
@@ -113,43 +121,49 @@ public class Preview extends SurfaceView implements SurfaceHolder.Callback {
 		mContext.closeCamera();
 	}
 
-	public boolean onTouchEvent(MotionEvent event) {
+	/*
+	@Override
+	public boolean onTouchEvent(MotionEvent e) {
 		Message msg = mHandler.obtainMessage();
 		msg.what = MESSAGE_SHUTTER;
 		mHandler.sendMessage(msg);
-		return true;	
+		
+		return true;
 	}
-	
+	*/
+
 	private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
-        final double ASPECT_TOLERANCE = 0.05;
-        double targetRatio = (double) w / h;
-        if (sizes == null) return null;
+		final double ASPECT_TOLERANCE = 0.05;
+		double targetRatio = (double)w / h;
+		if(sizes == null)
+			return null;
 
-        Size optimalSize = null;
-        double minDiff = Double.MAX_VALUE;
+		Size optimalSize = null;
+		double minDiff = Double.MAX_VALUE;
 
-        int targetHeight = h;
+		int targetHeight = h;
 
-        // Try to find an size match aspect ratio and size
-        for (Size size : sizes) {
-            double ratio = (double) size.width / size.height;
-            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
-            if (Math.abs(size.height - targetHeight) < minDiff) {
-                optimalSize = size;
-                minDiff = Math.abs(size.height - targetHeight);
-            }
-        }
+		// Try to find an size match aspect ratio and size
+		for(Size size : sizes) {
+			double ratio = (double)size.width / size.height;
+			if(Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE)
+				continue;
+			if(Math.abs(size.height - targetHeight) < minDiff) {
+				optimalSize = size;
+				minDiff = Math.abs(size.height - targetHeight);
+			}
+		}
 
-        // Cannot find the one match the aspect ratio, ignore the requirement
-        if (optimalSize == null) {
-            minDiff = Double.MAX_VALUE;
-            for (Size size : sizes) {
-                if (Math.abs(size.height - targetHeight) < minDiff) {
-                    optimalSize = size;
-                    minDiff = Math.abs(size.height - targetHeight);
-                }
-            }
-        }
-        return optimalSize;
-    }
+		// Cannot find the one match the aspect ratio, ignore the requirement
+		if(optimalSize == null) {
+			minDiff = Double.MAX_VALUE;
+			for(Size size : sizes) {
+				if(Math.abs(size.height - targetHeight) < minDiff) {
+					optimalSize = size;
+					minDiff = Math.abs(size.height - targetHeight);
+				}
+			}
+		}
+		return optimalSize;
+	}
 }

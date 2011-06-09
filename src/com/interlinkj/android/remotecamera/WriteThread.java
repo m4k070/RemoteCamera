@@ -1,5 +1,10 @@
 package com.interlinkj.android.remotecamera;
 
+/***
+ * Bluetooth送信用スレッド
+ * @author Ito
+ *
+ */
 public class WriteThread extends Thread {
 	private byte[] mData;
 	

@@ -8,12 +8,18 @@ import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-public class CameraPreview extends SurfaceView implements
+/**
+ * シャッター側に撮影した写真のプレビューを表示させるためのSurfaceView
+ * @author Ito
+ *
+ */
+public class ShutterPreview extends SurfaceView implements
 		SurfaceHolder.Callback {
 	public Bitmap bitmap = null;
 	private SurfaceHolder mHolder;
 	private PreviewThread mThread;
 
+	// 描画用スレッド
 	public class PreviewThread extends Thread {
 		public boolean running;
 		private float width;
@@ -45,12 +51,10 @@ public class CameraPreview extends SurfaceView implements
 		}
 	}
 
-	public CameraPreview(Context context, AttributeSet attrs) {
+	public ShutterPreview(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mHolder = getHolder();
 		mHolder.addCallback(this);
-
-		mThread = new PreviewThread();
 	}
 
 	@Override
@@ -62,6 +66,7 @@ public class CameraPreview extends SurfaceView implements
 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
+		mThread = new PreviewThread();
 		mThread.running = true;
 		mThread.start();
 	}
@@ -71,7 +76,6 @@ public class CameraPreview extends SurfaceView implements
 		mThread.running = false;
 		try {
 			mThread.join();
-		} catch(InterruptedException e) {
-		}
+		} catch(InterruptedException e) { }
 	}
 }

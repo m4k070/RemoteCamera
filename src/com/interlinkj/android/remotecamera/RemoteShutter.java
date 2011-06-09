@@ -22,6 +22,11 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.Toast;
 
+/**
+ * シャッター側Activity
+ * @author Ito
+ *
+ */
 public class RemoteShutter extends Activity {
 	public static final String TAG = "ReomteShutter";
 
@@ -34,10 +39,11 @@ public class RemoteShutter extends Activity {
 
 	public static final int REQUEST_ENABLE_BLUETOOTH = 0;
 
-	private BluetoothAdapter mAdapter;
+	private BluetoothAdapter mAdapter;	
 	private Handler mHandler;
 	private ProgressDialog mDialog;
-	private CameraPreview mSurface;
+	private ShutterPreview mSurface;
+	private AcceptThread mAcceptThread = null;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -66,7 +72,7 @@ public class RemoteShutter extends Activity {
 					break;
 				case MESSAGE_DIALOG_DISMISS:
 					mDialog.dismiss();
-					ReadThread readThread = new ReadThread();
+					ReceivePreviewThread readThread = new ReceivePreviewThread();
 					readThread.setHandler(mHandler);
 					readThread.start();
 					break;
@@ -83,8 +89,7 @@ public class RemoteShutter extends Activity {
 						for(int i = 0; i < width * height * 3; i++) {
 							buf[i] = dis.readInt();
 						}
-					} catch(IOException e) {
-					}
+					} catch(IOException e) { }
 
 					Bitmap bmp = Bitmap.createBitmap(width, height,
 							Bitmap.Config.RGB_565);
@@ -100,23 +105,28 @@ public class RemoteShutter extends Activity {
 			}
 		};
 
-		mSurface = (CameraPreview)findViewById(R.id.surfaceView1);
+		mSurface = (ShutterPreview)findViewById(R.id.surfaceView1);
 	}
 
+	// メニュー作成時に呼び出される
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.shutter, menu);
 		return true;
 	}
 
+	// メニュー項目選択時に呼び出される
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()) {
+		// 接続待機開始
 		case R.id.item_accept:
 //			Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
 //			discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
 //			startActivity(discoverableIntent);
 			startServer();
+			mAcceptThread = null;
 			return true;
+		// 終了
 		case R.id.item_shutter_exit:
 			finish();
 			return true;
@@ -133,19 +143,30 @@ public class RemoteShutter extends Activity {
 		mDialog.setIndeterminate(true);
 		mDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
 		mDialog.setCancelable(false);
+		
+		if(mAcceptThread != null) {
+			mAcceptThread.resume();
+		}
 	}
 
 	public void onPause() {
 		super.onPause();
 
-		mDialog = null;
+		if(mDialog.isShowing()) {
+			mDialog.dismiss();
+			mDialog = null;
+		}
+		
+		if(mAcceptThread != null) {
+			mAcceptThread.suspend();
+		}
 	}
 
-	// �O������̐ڑ���t���J�n
+	// カメラからの接続受付を開始
 	public void startServer() {
-		AcceptThread acceptThread = new AcceptThread(mAdapter);
-		acceptThread.setHandler(mHandler);
-		acceptThread.start();
+		mAcceptThread = new AcceptThread(mAdapter);
+		mAcceptThread.setHandler(mHandler);
+		mAcceptThread.start();
 	}
 
 	private OnClickListener mOnClickListener = new OnClickListener() {

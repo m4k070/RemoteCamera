@@ -4,6 +4,11 @@ import java.io.*;
 
 import android.bluetooth.BluetoothSocket;
 
+/***
+ * Bluetooth接続を管理するクラス
+ * @author Ito
+ *
+ */
 public class BluetoothConnection {
 	private static final BluetoothConnection mInstance = new BluetoothConnection();
 
@@ -17,6 +22,7 @@ public class BluetoothConnection {
 	private OutputStream mOutStream;
 	private InputStream mInStream;
 	private boolean mConnectFlag = false;
+	private boolean mBlockFlag = false;
 
 	public void setSocket(BluetoothSocket aSocket) {
 		mSocket = aSocket;
@@ -39,6 +45,7 @@ public class BluetoothConnection {
 	}
 	
 	public int read(byte[] aBuf) {
+		mBlockFlag = true;
 		int count = 0;
 		
 		try {
@@ -47,21 +54,29 @@ public class BluetoothConnection {
 			e.printStackTrace();
 		}
 		
+		mBlockFlag = false;
 		return count;
 	}
 	
 	public void write(byte[] aBuf) {
+		mBlockFlag = true;
 		try {
 			mOutStream.write(aBuf);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+		mBlockFlag = false;
 	}
 	
 	public void close() {
 		try {
-			mSocket.close();
-			mConnectFlag = false;
+			while(true) {
+				if(!mBlockFlag) {
+					mSocket.close();
+					mConnectFlag = false;
+					return;
+				}
+			}
 		} catch(IOException e) {
 			e.printStackTrace();
 		}

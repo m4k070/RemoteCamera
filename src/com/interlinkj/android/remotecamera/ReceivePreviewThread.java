@@ -8,19 +8,18 @@ import static com.interlinkj.android.remotecamera.RemoteShutter.TAG;
 import static com.interlinkj.android.remotecamera.RemoteShutter.MESSAGE_PREVIEW_DATA;
 import static com.interlinkj.android.remotecamera.RemoteShutter.MESSAGE_JPEG_DATA;
 
-public class ReadThread extends Thread {
+public class ReceivePreviewThread extends Thread {
 	private Handler mmHandler;
 
 	public void setHandler(Handler aHandler) {
 		mmHandler = aHandler;
 	}
 
-	public ReadThread() {
-	}
+	public ReceivePreviewThread() { }
 
 	public void run() {
-		final byte[] buffer = new byte[1024 * 1024 * 2]; // buffer store for the stream
-		int bytes; // bytes returned from read()
+		final byte[] buffer = new byte[1024 * 1024 * 2];	// buffer store for the stream
+		int bytes; 											// bytes returned from read()
 
 		// 例外が発生するまで受信処理を続ける
 		while(true) {
@@ -28,7 +27,7 @@ public class ReadThread extends Thread {
 			bytes = BluetoothConnection.getInstance().read(buffer);
 
 			if(bytes > 0) {
-				// Send the obtained bytes to the UI Activity
+				// カメラ側から送られてきたプレビューのbyte配列を処理
 				Message msg = mmHandler.obtainMessage(MESSAGE_JPEG_DATA, bytes,
 						-1, buffer);
 				if(!mmHandler.sendMessage(msg)) {

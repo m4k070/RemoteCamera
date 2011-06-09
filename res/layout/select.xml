@@ -6,4 +6,6 @@
 		android:text="Camera" android:layout_width="fill_parent"></Button>
 	<Button android:id="@+id/button_shutter" android:layout_height="wrap_content"
 		android:text="Shutter" android:layout_width="fill_parent"></Button>
+	<Button android:layout_height="wrap_content" android:text="Exit"
+		android:id="@+id/button_exit" android:layout_width="fill_parent"></Button>
 </LinearLayout>

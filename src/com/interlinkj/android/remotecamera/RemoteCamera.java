@@ -30,6 +30,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.GestureDetector.OnGestureListener;
+import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -53,7 +56,7 @@ public class RemoteCamera extends Activity {
 	private Handler mHandler;
 	private Camera mCamera = null;
 	private Bitmap mBitmap;
-	private Preview mPreview;
+	private CameraPreview mPreview;
 	private BluetoothAdapter mAdapter;
 	private BluetoothDevice mDevice;
 	private static AlertDialog mDialog;
@@ -62,6 +65,7 @@ public class RemoteCamera extends Activity {
 	private byte[] mPreviewBuffer;
 	private BluetoothConnection mConnection;
 	private boolean mUseAutofocus;
+	private GestureDetector mGestureDetector;
 
 	static {
 		System.loadLibrary("yuv420sp2rgb");
@@ -84,6 +88,12 @@ public class RemoteCamera extends Activity {
 
 	public void setUseAutofocus(boolean flag) {
 		mUseAutofocus = flag;
+	}
+	
+	@Override
+	public boolean dispatchTouchEvent(MotionEvent e) {
+		mGestureDetector.onTouchEvent(e);
+		return super.dispatchTouchEvent(e);
 	}
 
 	/** Called when the activity is first created. */
@@ -113,12 +123,17 @@ public class RemoteCamera extends Activity {
 		rHandler.setJpegCallback(mJpegCallback);
 		rHandler.setContext(this);
 		mHandler = rHandler;
-		mPreview = new Preview(this, null);
+		mPreview = new CameraPreview(this, null);
 		mPreview.setHandler(mHandler);
+		if(!mPreview.isClickable()) {
+			mPreview.setClickable(true);
+		}
 		LinearLayout ll = (LinearLayout)findViewById(R.id.linearLayout1);
 		ll.addView(mPreview, new LinearLayout.LayoutParams(
 				LinearLayout.LayoutParams.FILL_PARENT,
 				LinearLayout.LayoutParams.FILL_PARENT));
+
+		mGestureDetector = new GestureDetector(this, mGestureListener);
 	}
 
 	@Override
@@ -275,7 +290,14 @@ public class RemoteCamera extends Activity {
 		}
 	}
 
-	private void saveJpegToStorage(byte[] data) {
+	/**
+	 * データを外部ストレージに保存する
+	 * 
+	 * @param data
+	 * @param exe
+	 *            拡張子(「.」は含まない)
+	 */
+	private void saveToStorage(byte[] data, String ext) {
 		Resources res = getResources();
 		File sdPath = Environment.getExternalStorageDirectory();
 		try {
@@ -285,7 +307,7 @@ public class RemoteCamera extends Activity {
 			}
 			SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 			String saveFilename = picturesPath.getAbsolutePath() + "/" +
-					fmt.format(new Date()) + ".jpg";
+					fmt.format(new Date()) + "." + ext;
 			FileOutputStream fos = new FileOutputStream(saveFilename);
 			fos.write(data);
 			fos.close();
@@ -311,6 +333,7 @@ public class RemoteCamera extends Activity {
 		}
 	};
 
+	// 写真が撮影された際に呼び出されるコールバック
 	private Camera.PictureCallback mPictureCallback = new Camera.PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
 //			Log.i(TAG, "onPictureTaken");
@@ -331,18 +354,29 @@ public class RemoteCamera extends Activity {
 		}
 	};
 
+	// 撮影した写真がJPEG形式に変換された後に呼び出されるコールバック
 	private Camera.PictureCallback mJpegCallback = new Camera.PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
-			saveJpegToStorage(data);
-			
+			// JPEGデータをファイルに保存
+			saveToStorage(data, "jpg");
+
+			// 撮影時に停止するカメラのプレビューを再開
 			camera.startPreview();
-			/*
-			WriteThread writeThread = new WriteThread(data); 
+
+			// 撮影したデータをシャッター側に送信
+			Bitmap jpg = BitmapFactory.decodeByteArray(data, 0, data.length);
+			Bitmap scaled = Bitmap.createScaledBitmap(jpg, jpg.getWidth() / 4,
+					jpg.getHeight() / 4, false);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream dos = new DataOutputStream(baos);
+			if(!scaled.compress(Bitmap.CompressFormat.JPEG, 100, dos)) {
+				Toast.makeText(mContext, "Jpeg to ByteArray process was fail",
+						Toast.LENGTH_LONG).show();
+			}
+
+			WriteThread writeThread = new WriteThread(baos.toByteArray());
 			writeThread.start();
-			try {
-				writeThread.join();
-			} catch(InterruptedException e) { }
-			*/
+
 		}
 	};
 
@@ -367,7 +401,7 @@ public class RemoteCamera extends Activity {
 			if(!connect.isConnecting()) {
 				return;
 			}
-			
+
 			Camera.Size size = camera.getParameters().getPreviewSize();
 			int[] rgb = new int[size.width * size.height];
 			yuv420sp2rgb(rgb, data, size.width, size.height, 1);
@@ -379,7 +413,8 @@ public class RemoteCamera extends Activity {
 				for(int i : rgb) {
 					dos.writeInt(i);
 				}
-			} catch(IOException e) { }
+			} catch(IOException e) {
+			}
 //			Log.i(TAG, "onPreviewFrame2");
 			connect.write(baos.toByteArray());
 		}
@@ -460,6 +495,21 @@ public class RemoteCamera extends Activity {
 			msg.what = MESSAGE_SHUTTER;
 			mHandler.sendMessage(msg);
 			return false;
+		}
+	};
+
+	private SimpleOnGestureListener mGestureListener = new SimpleOnGestureListener() {
+		@Override
+		public boolean onSingleTapUp(MotionEvent motionevent) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void onLongPress(MotionEvent motionevent) {
+			Message msg = mHandler.obtainMessage();
+			msg.what = MESSAGE_SHUTTER;
+			mHandler.sendMessage(msg);
 		}
 	};
 
