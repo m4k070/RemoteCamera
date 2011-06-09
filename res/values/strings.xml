@@ -11,4 +11,5 @@
     <string name="bt_connect_success">Device:%s connect success</string>
     <string name="accept">Accept</string>
     <string name="accepting">accepting</string>
+    <string name="menu_clear">Clear Device</string>
 </resources>

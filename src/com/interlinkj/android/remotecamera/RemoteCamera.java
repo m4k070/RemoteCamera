@@ -52,14 +52,15 @@ public class RemoteCamera extends Activity {
 	public static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
 	private static final String RECENT_DEVICE = "recent_device";
+	private static Handler mHandler;
+	private static AlertDialog mDialog;				// 接続デバイス選択ダイアログ
+	private static ConnectedThread mConnectedThread;
 	private Context mContext;
-	private Handler mHandler;
 	private Camera mCamera = null;
 	private Bitmap mBitmap;
 	private CameraPreview mPreview;
 	private BluetoothAdapter mAdapter;
 	private BluetoothDevice mDevice;
-	private static AlertDialog mDialog;
 	private ConnectThread mConnectThread;
 	private boolean isConnect = false;
 	private byte[] mPreviewBuffer;
@@ -89,7 +90,7 @@ public class RemoteCamera extends Activity {
 	public void setUseAutofocus(boolean flag) {
 		mUseAutofocus = flag;
 	}
-	
+
 	@Override
 	public boolean dispatchTouchEvent(MotionEvent e) {
 		mGestureDetector.onTouchEvent(e);
@@ -154,6 +155,13 @@ public class RemoteCamera extends Activity {
 		case R.id.item_camera_exit: // 終了
 			finish();
 			break;
+		case R.id.item_clear: // 接続機器初期化
+			final SharedPreferences prefs =
+				PreferenceManager.getDefaultSharedPreferences(this);
+			Editor edit = prefs.edit();
+			edit.putString(RECENT_DEVICE, null);
+			edit.commit();
+			break;
 		case R.id.item_recent: // 接続
 			if(isConnect || mAdapter == null) {
 				break;
@@ -183,9 +191,10 @@ public class RemoteCamera extends Activity {
 
 		if(null != mConnectThread) {
 			mConnectThread.cancel();
-			mConnectThread.stop();
 			mConnectThread = null;
 		}
+		
+		mConnectedThread.cancel();
 	}
 
 	public void setConnect(boolean b) {
@@ -294,7 +303,7 @@ public class RemoteCamera extends Activity {
 	 * データを外部ストレージに保存する
 	 * 
 	 * @param data
-	 * @param exe
+	 * @param ext
 	 *            拡張子(「.」は含まない)
 	 */
 	private void saveToStorage(byte[] data, String ext) {
@@ -363,20 +372,24 @@ public class RemoteCamera extends Activity {
 			// 撮影時に停止するカメラのプレビューを再開
 			camera.startPreview();
 
+			/*
 			// 撮影したデータをシャッター側に送信
 			Bitmap jpg = BitmapFactory.decodeByteArray(data, 0, data.length);
-			Bitmap scaled = Bitmap.createScaledBitmap(jpg, jpg.getWidth() / 4,
-					jpg.getHeight() / 4, false);
+			Bitmap scaled = Bitmap.createScaledBitmap(jpg, jpg.getWidth() / 16,
+					jpg.getHeight() / 16, false);
+			if(scaled.getWidth() < 0 || scaled.getHeight() < 0) {
+				return;
+			}
+			
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			DataOutputStream dos = new DataOutputStream(baos);
-			if(!scaled.compress(Bitmap.CompressFormat.JPEG, 100, dos)) {
+			if(!scaled.compress(Bitmap.CompressFormat.PNG, 100, baos)) {
 				Toast.makeText(mContext, "Jpeg to ByteArray process was fail",
 						Toast.LENGTH_LONG).show();
 			}
 
 			WriteThread writeThread = new WriteThread(baos.toByteArray());
 			writeThread.start();
-
+			*/
 		}
 	};
 
@@ -425,7 +438,7 @@ public class RemoteCamera extends Activity {
 		private Camera.ShutterCallback mmShutterListener;
 		private Camera.PictureCallback mmPictureCallback;
 		private Camera.PictureCallback mmJpegCallback;
-		private RemoteCamera mContext;
+		private RemoteCamera mmContext;
 
 		public void setCamera(Camera aCamera) {
 			mmCamera = aCamera;
@@ -444,7 +457,7 @@ public class RemoteCamera extends Activity {
 		}
 
 		public void setContext(RemoteCamera aContext) {
-			mContext = aContext;
+			mmContext = aContext;
 		}
 
 		@Override
@@ -452,7 +465,7 @@ public class RemoteCamera extends Activity {
 			switch(msg.what) {
 			case MESSAGE_SHUTTER:
 				if(null != mmCamera) {
-					if(mContext.isUseAutofocus()) {
+					if(mmContext.isUseAutofocus()) {
 						mmCamera.cancelAutoFocus();
 						mmCamera.autoFocus(mAutofocusCallback);
 					} else {
@@ -464,17 +477,21 @@ public class RemoteCamera extends Activity {
 				mDialog.show();
 				break;
 			case MESSAGE_CONNECT_FAILED:
-				String fmtSucc = (String)mContext.getResources().getText(
+				String fmtSucc = (String)mmContext.getResources().getText(
 						R.string.bt_connect_failed);
-				Toast.makeText(mContext, String.format(fmtSucc, msg.obj),
+				Toast.makeText(mmContext, String.format(fmtSucc, msg.obj),
 						Toast.LENGTH_LONG).show();
 				break;
 			case MESSAGE_CONNECT_SUCCESS:
-				mContext.setConnect(true);
-				String fmtFail = (String)mContext.getResources().getText(
+				mmContext.setConnect(true);
+				String fmtFail = (String)mmContext.getResources().getText(
 						R.string.bt_connect_success);
-				Toast.makeText(mContext, String.format(fmtFail, msg.obj),
+				Toast.makeText(mmContext, String.format(fmtFail, msg.obj),
 						Toast.LENGTH_LONG).show();
+				mConnectedThread = new ConnectedThread();
+				mConnectedThread.running = true;
+				mConnectedThread.setHandler(mHandler);
+				mConnectedThread.start();
 				break;
 			}
 		}

@@ -18,7 +18,6 @@ public class ConnectThread extends Thread {
 	private final BluetoothSocket mSocket;
 	private final BluetoothDevice mDevice;
 	private Handler mHandler;
-	private static ConnectedThread mConnectedThread;
 
 	public void setHandler(Handler aHandler) {
 		mHandler = aHandler;
@@ -50,8 +49,7 @@ public class ConnectThread extends Thread {
 			mSocket.connect();
 
 			msg.what = MESSAGE_CONNECT_SUCCESS;
-			// Do work to manage the connection (in a separate thread)
-			manageConnectedSocket(mSocket);
+			BluetoothConnection.getInstance().setSocket(mSocket);
 		} catch(IOException connectException) {
 			// 例外が発生した場合はソケットを閉じ処理を抜ける
 			try {
@@ -70,12 +68,5 @@ public class ConnectThread extends Thread {
 			mSocket.close();
 		} catch(IOException e) {
 		}
-	}
-
-	public void manageConnectedSocket(BluetoothSocket aSocket) {
-		BluetoothConnection.getInstance().setSocket(aSocket);
-		mConnectedThread = new ConnectedThread();
-		mConnectedThread.setHandler(mHandler);
-		mConnectedThread.start();
 	}
 }

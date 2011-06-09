@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+
 	<item android:visible="true" android:enabled="true" android:id="@+id/item_recent"
 		android:title="@string/menu_connect_device"></item>
-	<item android:visible="true" android:enabled="true" android:id="@+id/item_camera_exit"
-		android:title="@string/menu_exit"></item>
+		
+	<item android:visible="true" android:enabled="true" android:id="@+id/item_clear"
+		android:title="@string/menu_clear"></item>
+
+	<item android:visible="true" android:enabled="true"
+		android:id="@+id/item_camera_exit" android:title="@string/menu_exit"></item>
 
 </menu>

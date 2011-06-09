@@ -7,6 +7,7 @@ import java.io.IOException;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -142,7 +143,8 @@ public class RemoteShutter extends Activity {
 		mDialog.setMessage(getResources().getText(R.string.accepting));
 		mDialog.setIndeterminate(true);
 		mDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		mDialog.setCancelable(false);
+		mDialog.setCancelable(true);
+		mDialog.setOnCancelListener(mCancelListener);
 		
 		if(mAcceptThread != null) {
 			mAcceptThread.resume();
@@ -176,6 +178,14 @@ public class RemoteShutter extends Activity {
 			WriteThread writeThread = new WriteThread(new byte[] { 30 });
 			writeThread.start();
 		}
+	};
+	
+	private DialogInterface.OnCancelListener mCancelListener =
+		new DialogInterface.OnCancelListener() {
+			@Override
+			public void onCancel(DialogInterface listener) {
+				mAcceptThread.cancel();
+			}
 	};
 
 	private boolean ensureBluetooth() {
