@@ -1,77 +1,155 @@
 package com.interlinkj.android.remotecamera;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.RectF;
+import java.io.IOException;
+import java.util.List;
+
+import android.hardware.Camera;
+import android.hardware.Camera.Size;
+import android.os.Handler;
+import android.os.Message;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import static com.interlinkj.android.remotecamera.RemoteCamera.TAG;
+import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_SHUTTER;
 
-public class CameraPreview extends SurfaceView implements
-		SurfaceHolder.Callback {
-	public Bitmap bitmap = null;
+public class Preview extends SurfaceView implements SurfaceHolder.Callback {
+
+	private Camera mCamera;
 	private SurfaceHolder mHolder;
-	private PreviewThread mThread;
-
-	public class PreviewThread extends Thread {
-		public boolean running;
-		private float width;
-		private float height;
-		private RectF rect;
-
-		@Override
-		public void run() {
-			while(running) {
-				Canvas c = null;
-				try {
-					c = mHolder.lockCanvas(null);
-					synchronized(mHolder) {
-						doDraw(c);
-					}
-				} finally {
-					if(c != null) {
-						mHolder.unlockCanvasAndPost(c);
-					}
-				}
-			}
-		}
-
-		private void doDraw(Canvas canvas) {
-			if(null != bitmap) {
-				rect = new RectF(0.0f, 0.0f, width, height);
-				canvas.drawBitmap(bitmap, null, rect, null);
-			}
-		}
+	private RemoteCamera mContext;
+	private Handler mHandler;
+	
+	public void setHandler(Handler aHandler) {
+		mHandler = aHandler;
+	}
+	public Handler getHandler() {
+		return mHandler;
 	}
 
-	public CameraPreview(Context context, AttributeSet attrs) {
+	/**
+	 * コンストラクタ
+	 * 
+	 * @param context
+	 * @param attrs
+	 */
+	public Preview(RemoteCamera context, AttributeSet attrs) {
 		super(context, attrs);
+//		Log.i(TAG, "new Preview");
+
+		mContext = context;
+
 		mHolder = getHolder();
 		mHolder.addCallback(this);
-
-		mThread = new PreviewThread();
+		mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+//		Log.i(TAG, "end");
 	}
 
-	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width,
-			int height) {
-		mThread.width = width;
-		mThread.height = height;
-	}
-
-	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
-		mThread.running = true;
-		mThread.start();
-	}
-
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		mThread.running = false;
-		try {
-			mThread.join();
-		} catch(InterruptedException e) {
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+//		Log.i(TAG, "Preview surfaceChanged");
+		
+		if (mCamera != null) {
+			mCamera.stopPreview();
+			Camera.Parameters parameters = mCamera.getParameters();
+//			List<Integer>supportedFormats = parameters.getSupportedPreviewFormats();
+//			if(supportedFormats != null) {
+//				parameters.setPreviewFormat(supportedFormats.get(0));
+//			} else {
+//				parameters.setPreviewFormat(ImageFormat.NV21);
+//			}
+			// プレビューサイズ
+			Size optimalSize = getOptimalPreviewSize(
+					parameters.getSupportedPreviewSizes(),
+					width, height);
+			parameters.setPreviewSize(optimalSize.width, optimalSize.height);				
+			// 画像サイズ
+			List<Size> supportedPictSizes = parameters.getSupportedPictureSizes();
+			if(supportedPictSizes != null) {
+				Size pictSize = supportedPictSizes.get(0);
+				parameters.setPictureSize(pictSize.width, pictSize.height);
+			}
+			// Androidのカメラは横向き専用
+			parameters.set("orientation", "landscape");
+			try {
+				mCamera.setParameters(parameters);
+				mCamera.setPreviewDisplay(holder);
+			} catch (IOException e) {
+//				Log.e(TAG, "IOException");
+			} catch (RuntimeException e) {
+//				Log.e(TAG, "RuntimeException");
+			}
+			mCamera.startPreview();
+			mCamera.autoFocus(null);
 		}
 	}
+
+	public void surfaceCreated(SurfaceHolder holder) {
+//		Log.i(TAG, "Preview surfaceCreated");
+
+		mCamera = Camera.open();
+		mContext.setCamera(mCamera);
+		Camera.Parameters param = mCamera.getParameters();
+		// フォーカスモード
+		List<String> focusModes = param.getSupportedFocusModes();
+		if(focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+			param.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+			mContext.setUseAutofocus(true);
+		} else {
+			param.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
+			mContext.setUseAutofocus(false);
+		}
+		try {
+			mCamera.setPreviewDisplay(holder);
+		} catch (IOException e) {
+//			Log.e(TAG, "IOException");
+			e.printStackTrace();
+		}
+	}
+
+	public void surfaceDestroyed(SurfaceHolder holder) {
+//		Log.i(TAG, "Preview surfaceDestroyed");
+		mContext.closeCamera();
+	}
+
+	public boolean onTouchEvent(MotionEvent event) {
+		Message msg = mHandler.obtainMessage();
+		msg.what = MESSAGE_SHUTTER;
+		mHandler.sendMessage(msg);
+		return true;	
+	}
+	
+	private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
+        final double ASPECT_TOLERANCE = 0.05;
+        double targetRatio = (double) w / h;
+        if (sizes == null) return null;
+
+        Size optimalSize = null;
+        double minDiff = Double.MAX_VALUE;
+
+        int targetHeight = h;
+
+        // Try to find an size match aspect ratio and size
+        for (Size size : sizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+            if (Math.abs(size.height - targetHeight) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+
+        // Cannot find the one match the aspect ratio, ignore the requirement
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Size size : sizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
+        return optimalSize;
+    }
 }
