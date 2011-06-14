@@ -61,10 +61,9 @@ public class RemoteCamera extends Activity {
 	private CameraPreview mPreview;
 	private BluetoothAdapter mAdapter;
 	private BluetoothDevice mDevice;
-	private ConnectThread mConnectThread;
 	private boolean isConnect = false;
 	private byte[] mPreviewBuffer;
-	private BluetoothConnection mConnection;
+	private Connection mConnection;
 	private boolean mUseAutofocus;
 	private GestureDetector mGestureDetector;
 
@@ -124,6 +123,7 @@ public class RemoteCamera extends Activity {
 		rHandler.setJpegCallback(mJpegCallback);
 		rHandler.setContext(this);
 		mHandler = rHandler;
+		BluetoothConnection.getInstance().setHandler(rHandler);
 		mPreview = new CameraPreview(this, null);
 		mPreview.setHandler(mHandler);
 		if(!mPreview.isClickable()) {
@@ -168,6 +168,9 @@ public class RemoteCamera extends Activity {
 			}
 			startConnect();
 			break;
+		case R.id.item_disconnect:
+			BluetoothConnection.getInstance().close();
+			break;
 		}
 
 		return true;
@@ -188,11 +191,6 @@ public class RemoteCamera extends Activity {
 	@Override
 	public void onStop() {
 		super.onStop();
-
-		if(null != mConnectThread) {
-			mConnectThread.cancel();
-			mConnectThread = null;
-		}
 		
 		mConnectedThread.cancel();
 	}
@@ -215,19 +213,16 @@ public class RemoteCamera extends Activity {
 		}
 	}
 
-	private synchronized void startConnect() {
+	private void startConnect() {
 		// 規定の接続デバイスのアドレスを読み込み
 		final SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(this);
 		String addr = prefs.getString(RECENT_DEVICE, null);
-
+		final Connection connection = BluetoothConnection.getInstance();
+		
 		if(null == addr) { // 規定の接続デバイスが無い場合
-			List<String> deviceList = new ArrayList<String>(); // ペアリング済みデバイスの名前のリスト
-			for(BluetoothDevice device : mAdapter.getBondedDevices()) {
-				deviceList.add(device.getName());
-			}
 			// 配列へ変換
-			final String[] deviceNames = deviceList.toArray(new String[0]);
+			final String[] deviceNames = connection.getDeviceNameSet().toArray(new String[0]);
 
 			// 接続デバイス選択ダイアログを作成
 			mDialog = new AlertDialog.Builder(this)
@@ -237,19 +232,13 @@ public class RemoteCamera extends Activity {
 								// 選択されたデバイスのアドレスを取得し接続
 								public void onClick(DialogInterface di, int i) {
 									String address = null;
-									for(BluetoothDevice device : mAdapter
-											.getBondedDevices()) {
-										if(device.getName().equals(
-												deviceNames[i])) {
-											address = device.getAddress();
-										}
-									}
+									address = connection.getDeviceAddress(deviceNames[i]);
 									// 規定の接続デバイスとして保存
 									Editor editor = prefs.edit();
 									editor.putString(RECENT_DEVICE, address);
 									editor.commit();
 
-									connectDevice(address);
+									connection.connect(address);
 								}
 							}).create();
 
@@ -258,15 +247,8 @@ public class RemoteCamera extends Activity {
 			msg.what = MESSAGE_DIALOG_SHOW;
 			mHandler.sendMessage(msg);
 		} else {
-			connectDevice(addr);
+			connection.connect(addr);
 		}
-	}
-
-	private void connectDevice(String addr) {
-		mDevice = mAdapter.getRemoteDevice(addr);
-		mConnectThread = new ConnectThread(mDevice);
-		mConnectThread.setHandler(mHandler);
-		mConnectThread.start();
 	}
 
 	private boolean ensureBluetooth() {
@@ -410,7 +392,7 @@ public class RemoteCamera extends Activity {
 
 	private Camera.PreviewCallback mPreviewCallback2 = new Camera.PreviewCallback() {
 		public void onPreviewFrame(byte[] data, Camera camera) {
-			BluetoothConnection connect = BluetoothConnection.getInstance();
+			Connection connect = BluetoothConnection.getInstance();
 			if(!connect.isConnecting()) {
 				return;
 			}
@@ -426,8 +408,7 @@ public class RemoteCamera extends Activity {
 				for(int i : rgb) {
 					dos.writeInt(i);
 				}
-			} catch(IOException e) {
-			}
+			} catch(IOException e) { }
 //			Log.i(TAG, "onPreviewFrame2");
 			connect.write(baos.toByteArray());
 		}

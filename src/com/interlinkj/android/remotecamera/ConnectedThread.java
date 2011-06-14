@@ -19,13 +19,14 @@ public class ConnectedThread extends Thread {
 	}
 
 	public void run() {
-		final byte[] buffer = new byte[1024]; // buffer store for the stream
+		byte[] buffer = new byte[1024]; // buffer store for the stream
 		int bytes; // bytes returned from read()
 		
 		// 例外が発生するまで受信処理を続ける
+		Connection connection = BluetoothConnection.getInstance();
 		while(running) {
 			// Read from the InputStream
-			bytes = BluetoothConnection.getInstance().read(buffer);
+			bytes = connection.read(buffer);
 
 			if(bytes > 0) {
 				// Send the obtained bytes to the UI Activity
@@ -34,24 +35,8 @@ public class ConnectedThread extends Thread {
 				if(!mHandler.sendMessage(msg)) {
 					Log.e(TAG, "sendMessage Failed.");
 				}
-
-//				mHandler.post(new Runnable() {
-//					public void run() {
-//						StringBuilder sb = new StringBuilder();
-//						sb.append(mTextView);
-//						sb.append("\r\n");
-//						sb.append(new String(buffer));
-//						mTextView.setText(sb.toString());
-//					}
-//				});
 			}
-
 		}
-	}
-
-	/* Call this from the main Activity to send data to the remote device */
-	public void write(byte[] bytes) {
-		BluetoothConnection.getInstance().write(bytes);
 	}
 
 	/* Call this from the main Activity to shutdown the connection */

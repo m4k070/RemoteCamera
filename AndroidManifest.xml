@@ -13,7 +13,7 @@
 
 	<application android:icon="@drawable/icon" android:label="@string/app_name">
 		<activity android:name="com.interlinkj.android.remotecamera.RemoteCamera"
-			android:label="@string/app_name" android:screenOrientation="landscape">
+			android:label="@string/app_name" android:screenOrientation="landscape" >
 		</activity>
 		<activity android:name="RemoteShutter"></activity>
 		<activity android:name="SelectModeActivity">

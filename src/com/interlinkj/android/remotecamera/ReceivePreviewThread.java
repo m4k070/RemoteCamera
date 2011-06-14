@@ -9,10 +9,10 @@ import static com.interlinkj.android.remotecamera.RemoteShutter.MESSAGE_PREVIEW_
 import static com.interlinkj.android.remotecamera.RemoteShutter.MESSAGE_JPEG_DATA;
 
 public class ReceivePreviewThread extends Thread {
-	private Handler mmHandler;
+	private Handler mHandler;
 
 	public void setHandler(Handler aHandler) {
-		mmHandler = aHandler;
+		mHandler = aHandler;
 	}
 
 	public ReceivePreviewThread() { }
@@ -28,9 +28,9 @@ public class ReceivePreviewThread extends Thread {
 
 			if(bytes > 0) {
 				// カメラ側から送られてきたプレビューのbyte配列を処理
-				Message msg = mmHandler.obtainMessage(MESSAGE_JPEG_DATA, bytes,
+				Message msg = mHandler.obtainMessage(MESSAGE_JPEG_DATA, bytes,
 						-1, buffer);
-				if(!mmHandler.sendMessage(msg)) {
+				if(!mHandler.sendMessage(msg)) {
 					Log.e(TAG, "sendMessage Failed.");
 				}
 			}

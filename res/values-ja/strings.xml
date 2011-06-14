@@ -11,4 +11,5 @@
 	<string name="bt_connect_success">デバイス:%sに接続しました</string>
 	<string name="accept">接続待機</string>
 	<string name="accepting">接続待機中</string>
+	<string name="menu_clear">接続デバイス初期化</string>
 </resources>

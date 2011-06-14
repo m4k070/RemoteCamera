@@ -3,7 +3,10 @@
 
 	<item android:visible="true" android:enabled="true" android:id="@+id/item_recent"
 		android:title="@string/menu_connect_device"></item>
-		
+
+	<item android:visible="true" android:enabled="true"
+		android:id="@+id/item_disconnect" android:title="@string/menu_disconnect"></item>
+
 	<item android:visible="true" android:enabled="true" android:id="@+id/item_clear"
 		android:title="@string/menu_clear"></item>
 
