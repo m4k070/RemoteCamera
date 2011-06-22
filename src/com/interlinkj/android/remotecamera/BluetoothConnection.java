@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import android.bluetooth.*;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 
@@ -72,6 +73,43 @@ public class BluetoothConnection extends Connection {
 	@Override
 	public boolean isConnecting() {
 		return mConnectFlag;
+	}
+	
+	private class ConnectTask extends AsyncTask<BluetoothDevice, Integer, BluetoothSocket> {
+		Message mMsg;
+		
+		@Override
+		protected void onPreExecute() {
+			mMsg = mHandler.obtainMessage();
+		}
+		
+		@Override
+		protected BluetoothSocket doInBackground(BluetoothDevice... aDevice) {
+			try {
+				mSocket = aDevice[0].createRfcommSocketToServiceRecord(SERIAL_PORT_PROFILE);
+			} catch(IOException e) {
+				
+			}
+			
+			try {
+				mSocket.connect();
+				mMsg.what = MESSAGE_CONNECT_SUCCESS;
+			} catch(IOException e) {
+				try {
+					mSocket.close();
+				} catch(IOException ex) {
+					
+				}
+				mMsg.what = MESSAGE_CONNECT_FAILED;
+			} 
+			
+			return mSocket;
+		}
+		
+		@Override
+		protected void onPostExecute(BluetoothSocket aSocket) {
+			mHandler.sendMessage(mMsg);
+		}
 	}
 
 	public class ConnectThread extends Thread {
@@ -166,7 +204,7 @@ public class BluetoothConnection extends Connection {
 
 		return count;
 	}
-
+	
 	@Override
 	public void write(byte[] aBuf) {
 		try {

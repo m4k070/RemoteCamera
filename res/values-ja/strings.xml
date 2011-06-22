@@ -12,4 +12,7 @@
 	<string name="accept">接続待機</string>
 	<string name="accepting">接続待機中</string>
 	<string name="menu_clear">接続デバイス初期化</string>
+	<string name="menu_disconnect">切断</string>
+	<string name="menu_camera">カメラ</string>
+	<string name="menu_shutter">シャッター</string>
 </resources>

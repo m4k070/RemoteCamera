@@ -6,9 +6,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import com.interlinkj.android.remotecamera.R;
 
 import android.app.Activity;
@@ -20,10 +18,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.pm.ApplicationInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.Camera;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -31,7 +31,6 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.GestureDetector;
-import android.view.GestureDetector.OnGestureListener;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -52,6 +51,7 @@ public class RemoteCamera extends Activity {
 	public static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
 	private static final String RECENT_DEVICE = "recent_device";
+	private static boolean mDebug = false;
 	private static Handler mHandler;
 	private static AlertDialog mDialog;				// 接続デバイス選択ダイアログ
 	private static ConnectedThread mConnectedThread;
@@ -135,6 +135,11 @@ public class RemoteCamera extends Activity {
 				LinearLayout.LayoutParams.FILL_PARENT));
 
 		mGestureDetector = new GestureDetector(this, mGestureListener);
+		
+		ApplicationInfo applicationInfo = getApplicationInfo(); 
+		if((applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+			mDebug = true;
+		}
 	}
 
 	@Override
@@ -192,7 +197,9 @@ public class RemoteCamera extends Activity {
 	public void onStop() {
 		super.onStop();
 		
-		mConnectedThread.cancel();
+		if(null != mConnectedThread) {
+			mConnectedThread.cancel();
+		}
 	}
 
 	public void setConnect(boolean b) {
@@ -320,14 +327,15 @@ public class RemoteCamera extends Activity {
 
 	private Camera.ShutterCallback mShutterListener = new Camera.ShutterCallback() {
 		public void onShutter() {
-//			Log.i(TAG, "onShutter");
+			if(mDebug) { Log.i(TAG, "onShutter"); }
 		}
 	};
 
 	// 写真が撮影された際に呼び出されるコールバック
 	private Camera.PictureCallback mPictureCallback = new Camera.PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
-//			Log.i(TAG, "onPictureTaken");
+			
+			if(mDebug) { Log.i(TAG, "onPictureTaken"); }
 
 			if(null == data) {
 				return;
@@ -377,7 +385,7 @@ public class RemoteCamera extends Activity {
 
 	private Camera.PreviewCallback mPreviewCallback = new Camera.PreviewCallback() {
 		public void onPreviewFrame(byte[] data, Camera camera) {
-//			Log.i(TAG, "onPreviewFrame");
+			if(mDebug) { Log.i(TAG, "onPreviewFrame"); }
 
 			// プレビュー画像をYUV420からRGBに変換
 			Camera.Size size = camera.getParameters().getPreviewSize();
@@ -409,16 +417,16 @@ public class RemoteCamera extends Activity {
 					dos.writeInt(i);
 				}
 			} catch(IOException e) { }
-//			Log.i(TAG, "onPreviewFrame2");
+			if(mDebug) { Log.i(TAG, "onPreviewFrame2"); }
 			connect.write(baos.toByteArray());
 		}
 	};
 
 	public static class ReceiveHandler extends Handler {
 		private Camera mmCamera;
-		private Camera.ShutterCallback mmShutterListener;
-		private Camera.PictureCallback mmPictureCallback;
-		private Camera.PictureCallback mmJpegCallback;
+		private Camera.ShutterCallback mmShutterListener = null;
+		private Camera.PictureCallback mmPictureCallback = null;
+		private Camera.PictureCallback mmJpegCallback = null;
 		private RemoteCamera mmContext;
 
 		public void setCamera(Camera aCamera) {
@@ -450,7 +458,7 @@ public class RemoteCamera extends Activity {
 						mmCamera.cancelAutoFocus();
 						mmCamera.autoFocus(mAutofocusCallback);
 					} else {
-						mmCamera.takePicture(null, null, mmJpegCallback);
+						mmCamera.takePicture(mmShutterListener, mmPictureCallback, mmJpegCallback);
 					}
 				}
 				break;
@@ -481,12 +489,36 @@ public class RemoteCamera extends Activity {
 			@Override
 			public void onAutoFocus(boolean success, Camera aCamera) {
 				if(success) {
-					aCamera.takePicture(null, null, mmJpegCallback);
+					aCamera.takePicture(mmShutterListener, mmPictureCallback, mmJpegCallback);
 				}
 			}
 		};
 	}
 
+	public class ConnectedTask extends AsyncTask<Integer, Integer, Integer> {
+
+		@Override
+		protected Integer doInBackground(Integer... aLen) {
+			BluetoothConnection connection = BluetoothConnection.getInstance();
+			byte[] buf = new byte[aLen[0]];
+			int count = 0;
+			
+			try {
+				while(true) {
+					count = connection.read(buf);
+				}
+			} catch(Exception e) {
+			}
+			
+			return count;
+		}
+		
+		@Override
+		protected void onPostExecute(Integer result) {
+			
+		}
+	}
+	
 	private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
 		public boolean onTouch(View view, MotionEvent motionevent) {
 			Message msg = mHandler.obtainMessage();
@@ -525,7 +557,7 @@ public class RemoteCamera extends Activity {
 	 */
 	public static void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width,
 			int height) {
-//		Log.i(TAG, "decodeYUV420SP");
+		if(mDebug) { Log.i(TAG, "decodeYUV420SP"); }
 		final int frameSize = width * height;
 
 		try {
@@ -563,9 +595,9 @@ public class RemoteCamera extends Activity {
 				}
 			}
 		} catch(Exception e) {
-//			Log.e(TAG, "Exception");
+			if(mDebug) { Log.e(TAG, "Exception"); }
 		}
 
-//		Log.i(TAG, "end decode");
+		if(mDebug) { Log.i(TAG, "end decode"); }
 	}
 }

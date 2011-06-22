@@ -3,9 +3,9 @@
 	android:layout_height="fill_parent" android:orientation="vertical"
 	android:layout_width="fill_parent">
 	<Button android:id="@+id/button_camera" android:layout_height="wrap_content"
-		android:text="Camera" android:layout_width="fill_parent"></Button>
+		android:text="@string/menu_camera" android:layout_width="fill_parent"></Button>
 	<Button android:id="@+id/button_shutter" android:layout_height="wrap_content"
-		android:text="Shutter" android:layout_width="fill_parent"></Button>
-	<Button android:layout_height="wrap_content" android:text="Exit"
+		android:text="@string/menu_shutter" android:layout_width="fill_parent"></Button>
+	<Button android:layout_height="wrap_content" android:text="@string/menu_exit"
 		android:id="@+id/button_exit" android:layout_width="fill_parent"></Button>
 </LinearLayout>

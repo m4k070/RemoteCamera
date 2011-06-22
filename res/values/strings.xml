@@ -13,4 +13,6 @@
     <string name="accepting">accepting</string>
     <string name="menu_clear">Clear Device</string>
     <string name="menu_disconnect">Disconnect</string>
+    <string name="menu_camera">Camera</string>
+    <string name="menu_shutter">Shutter</string>
 </resources>

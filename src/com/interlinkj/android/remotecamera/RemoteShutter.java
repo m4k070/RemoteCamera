@@ -9,6 +9,7 @@ import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -17,7 +18,6 @@ import android.os.Message;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -45,6 +45,7 @@ public class RemoteShutter extends Activity {
 	private ProgressDialog mDialog;
 	private ShutterPreview mSurface;
 	private AcceptThread mAcceptThread = null;
+	private static boolean mDebug = false;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -107,6 +108,11 @@ public class RemoteShutter extends Activity {
 		};
 
 		mSurface = (ShutterPreview)findViewById(R.id.surfaceView1);
+		
+		ApplicationInfo appInfo = getApplicationInfo();
+		if((appInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+			mDebug = true;
+		}
 	}
 
 	// メニュー作成時に呼び出される
