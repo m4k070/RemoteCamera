@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+	<ListPreference android:dialogTitle="@string/dialog_title"
+		android:key="device" android:title="@string/pref_device" />
+	<EditTextPreference android:key="save_path"
+		android:title="Save Path"></EditTextPreference>
+	<EditTextPreference android:key="format"
+		android:title="Save Filename Format" />
+
+</PreferenceScreen>

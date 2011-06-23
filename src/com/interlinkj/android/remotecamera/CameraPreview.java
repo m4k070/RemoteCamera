@@ -3,6 +3,7 @@ package com.interlinkj.android.remotecamera;
 import java.io.IOException;
 import java.util.List;
 
+import android.content.pm.ApplicationInfo;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
 import android.os.Handler;
@@ -11,7 +12,6 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import static com.interlinkj.android.remotecamera.RemoteCamera.TAG;
-import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_SHUTTER;
 
 /**
  * カメラ側プレビュー用SurfaceView
@@ -26,6 +26,7 @@ public class CameraPreview extends SurfaceView implements
 	private SurfaceHolder mHolder;
 	private RemoteCamera mContext;
 	private Handler mHandler;
+	private boolean mDebug;
 
 	public void setHandler(Handler aHandler) {
 		mHandler = aHandler;
@@ -49,11 +50,16 @@ public class CameraPreview extends SurfaceView implements
 		mHolder = getHolder();
 		mHolder.addCallback(this);
 		mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+		
+		ApplicationInfo appInfo = mContext.getApplicationInfo();
+		if((appInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+			mDebug = true;
+		}
 	}
 
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
-//		Log.i(TAG, "Preview surfaceChanged");
+		if(mDebug) { Log.i(TAG, "Preview surfaceChanged"); }
 
 		if(mCamera != null) {
 			mCamera.stopPreview();
@@ -81,9 +87,9 @@ public class CameraPreview extends SurfaceView implements
 				mCamera.setParameters(parameters);
 				mCamera.setPreviewDisplay(holder);
 			} catch(IOException e) {
-//				Log.e(TAG, "IOException");
+				if(mDebug) { Log.e(TAG, "IOException"); }
 			} catch(RuntimeException e) {
-//				Log.e(TAG, "RuntimeException");
+				if(mDebug) { Log.e(TAG, "RuntimeException"); }
 			}
 			mCamera.startPreview();
 			mCamera.autoFocus(null);
@@ -91,7 +97,7 @@ public class CameraPreview extends SurfaceView implements
 	}
 
 	public void surfaceCreated(SurfaceHolder holder) {
-//		Log.i(TAG, "Preview surfaceCreated");
+		if(mDebug) { Log.i(TAG, "Preview surfaceCreated"); }
 
 		mCamera = Camera.open();
 		mContext.setCamera(mCamera);
@@ -108,26 +114,15 @@ public class CameraPreview extends SurfaceView implements
 		try {
 			mCamera.setPreviewDisplay(holder);
 		} catch(IOException e) {
-//			Log.e(TAG, "IOException");
+			if(mDebug) { Log.e(TAG, "IOException"); }
 			e.printStackTrace();
 		}
 	}
 
 	public void surfaceDestroyed(SurfaceHolder holder) {
-//		Log.i(TAG, "Preview surfaceDestroyed");
+		if(mDebug) { Log.i(TAG, "Preview surfaceDestroyed"); }
 		mContext.closeCamera();
 	}
-
-	/*
-	@Override
-	public boolean onTouchEvent(MotionEvent e) {
-		Message msg = mHandler.obtainMessage();
-		msg.what = MESSAGE_SHUTTER;
-		mHandler.sendMessage(msg);
-		
-		return true;
-	}
-	*/
 
 	private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
 		final double ASPECT_TOLERANCE = 0.05;

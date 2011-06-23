@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="hello">Hello World, BluetoothCamera!</string>
 	<string name="app_name">RemoteCamera</string>
 	<string name="picture_save_success">写真を保存しました</string>
 	<string name="picture_save_failed">写真の保存に失敗しました</string>
-	<string name="menu_exit">終了</string>
-	<string name="menu_connect_device">接続</string>
 	<string name="dialog_title">デバイスを選択して下さい</string>
 	<string name="bt_connect_failed">デバイス:%sへの接続に失敗しました</string>
 	<string name="bt_connect_success">デバイス:%sに接続しました</string>
@@ -14,5 +11,10 @@
 	<string name="menu_clear">接続デバイス初期化</string>
 	<string name="menu_disconnect">切断</string>
 	<string name="menu_camera">カメラ</string>
+	<string name="menu_exit">終了</string>
+	<string name="menu_connect_device">接続</string>
 	<string name="menu_shutter">シャッター</string>
+	<string name="pref">設定</string>
+	<string name="pref_device">接続機器選択</string>
+	<string name="shutter">撮影</string>
 </resources>

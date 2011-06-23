@@ -15,6 +15,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -113,6 +114,8 @@ public class RemoteShutter extends Activity {
 		if((appInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
 			mDebug = true;
 		}
+		
+		if(mDebug) { Log.d(TAG, "RemoteShutter#onCreate()"); }
 	}
 
 	// メニュー作成時に呼び出される

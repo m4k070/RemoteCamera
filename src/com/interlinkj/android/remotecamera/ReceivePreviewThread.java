@@ -5,7 +5,6 @@ import android.os.Message;
 import android.util.Log;
 
 import static com.interlinkj.android.remotecamera.RemoteShutter.TAG;
-import static com.interlinkj.android.remotecamera.RemoteShutter.MESSAGE_PREVIEW_DATA;
 import static com.interlinkj.android.remotecamera.RemoteShutter.MESSAGE_JPEG_DATA;
 
 public class ReceivePreviewThread extends Thread {

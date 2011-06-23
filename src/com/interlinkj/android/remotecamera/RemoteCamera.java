@@ -7,6 +7,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import wiiremotej.WiiRemote;
+import wiiremotej.WiiRemoteJ;
+import wiiremotej.event.WRButtonEvent;
+import wiiremotej.event.WiiRemoteAdapter;
+
 import com.interlinkj.android.remotecamera.R;
 
 import android.app.Activity;
@@ -42,6 +48,10 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import static com.interlinkj.android.remotecamera.CameraSetting.RECENT_DEVICE_PREF_KEY;
+import static com.interlinkj.android.remotecamera.CameraSetting.SAVE_PATH_PREF_KEY;
+import static com.interlinkj.android.remotecamera.CameraSetting.FILENAME_FMT_PREF_KEY;
+
 public class RemoteCamera extends Activity {
 	public static final String TAG = "RemoteCamera";
 	public static final int MESSAGE_SHUTTER = 0;
@@ -49,11 +59,11 @@ public class RemoteCamera extends Activity {
 	public static final int MESSAGE_CONNECT_FAILED = 2;
 	public static final int MESSAGE_CONNECT_SUCCESS = 3;
 	public static final int REQUEST_ENABLE_BLUETOOTH = 1;
+	public static final int CAMERA_PREFERENCE = 2;
 
-	private static final String RECENT_DEVICE = "recent_device";
 	private static boolean mDebug = false;
 	private static Handler mHandler;
-	private static AlertDialog mDialog;				// 接続デバイス選択ダイアログ
+	private static AlertDialog mDialog; // 接続デバイス選択ダイアログ
 	private static ConnectedThread mConnectedThread;
 	private Context mContext;
 	private Camera mCamera = null;
@@ -135,8 +145,8 @@ public class RemoteCamera extends Activity {
 				LinearLayout.LayoutParams.FILL_PARENT));
 
 		mGestureDetector = new GestureDetector(this, mGestureListener);
-		
-		ApplicationInfo applicationInfo = getApplicationInfo(); 
+
+		ApplicationInfo applicationInfo = getApplicationInfo();
 		if((applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
 			mDebug = true;
 		}
@@ -160,12 +170,9 @@ public class RemoteCamera extends Activity {
 		case R.id.item_camera_exit: // 終了
 			finish();
 			break;
-		case R.id.item_clear: // 接続機器初期化
-			final SharedPreferences prefs =
-				PreferenceManager.getDefaultSharedPreferences(this);
-			Editor edit = prefs.edit();
-			edit.putString(RECENT_DEVICE, null);
-			edit.commit();
+		case R.id.item_pref: // 設定
+			Intent i = new Intent(this, CameraSetting.class);
+			startActivityForResult(i, CAMERA_PREFERENCE);
 			break;
 		case R.id.item_recent: // 接続
 			if(isConnect || mAdapter == null) {
@@ -196,7 +203,7 @@ public class RemoteCamera extends Activity {
 	@Override
 	public void onStop() {
 		super.onStop();
-		
+
 		if(null != mConnectedThread) {
 			mConnectedThread.cancel();
 		}
@@ -224,12 +231,13 @@ public class RemoteCamera extends Activity {
 		// 規定の接続デバイスのアドレスを読み込み
 		final SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(this);
-		String addr = prefs.getString(RECENT_DEVICE, null);
+		String addr = prefs.getString(RECENT_DEVICE_PREF_KEY, null);
 		final Connection connection = BluetoothConnection.getInstance();
-		
+
 		if(null == addr) { // 規定の接続デバイスが無い場合
 			// 配列へ変換
-			final String[] deviceNames = connection.getDeviceNameSet().toArray(new String[0]);
+			final String[] deviceNames = connection.getDeviceNameSet().toArray(
+					new String[0]);
 
 			// 接続デバイス選択ダイアログを作成
 			mDialog = new AlertDialog.Builder(this)
@@ -239,10 +247,11 @@ public class RemoteCamera extends Activity {
 								// 選択されたデバイスのアドレスを取得し接続
 								public void onClick(DialogInterface di, int i) {
 									String address = null;
-									address = connection.getDeviceAddress(deviceNames[i]);
+									address = connection
+											.getDeviceAddress(deviceNames[i]);
 									// 規定の接続デバイスとして保存
 									Editor editor = prefs.edit();
-									editor.putString(RECENT_DEVICE, address);
+									editor.putString(RECENT_DEVICE_PREF_KEY, address);
 									editor.commit();
 
 									connection.connect(address);
@@ -297,13 +306,36 @@ public class RemoteCamera extends Activity {
 	 */
 	private void saveToStorage(byte[] data, String ext) {
 		Resources res = getResources();
-		File sdPath = Environment.getExternalStorageDirectory();
+		SharedPreferences pref = PreferenceManager
+				.getDefaultSharedPreferences(mContext);
+		String savePath = pref.getString(SAVE_PATH_PREF_KEY, null);
+		String filenameFormatString = pref.getString(FILENAME_FMT_PREF_KEY, null);
+		File picturesPath = null;
+
+		if(savePath == null) {
+			// 保存先の設定が無い場合
+			File sdPath = Environment.getExternalStorageDirectory();
+			savePath = sdPath.getAbsolutePath() + "/Pictures";
+			Editor editor = pref.edit();
+			editor.putString(SAVE_PATH_PREF_KEY, savePath);
+			editor.commit();
+		}
+		picturesPath = new File(savePath);
+		
+		SimpleDateFormat fmt;
+		if(filenameFormatString == null) {
+			// 保存ファイル名の書式指定が無い場合
+			filenameFormatString = "yyyy-MM-dd-HH-mm-ss";
+			Editor editor = pref.edit();
+			editor.putString(FILENAME_FMT_PREF_KEY, filenameFormatString);
+			editor.commit();
+		} 
+		fmt = new SimpleDateFormat(filenameFormatString);
+
 		try {
-			File picturesPath = new File(sdPath.getAbsolutePath() + "/Pictures");
 			if(!picturesPath.exists()) {
 				picturesPath.mkdirs();
 			}
-			SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 			String saveFilename = picturesPath.getAbsolutePath() + "/" +
 					fmt.format(new Date()) + "." + ext;
 			FileOutputStream fos = new FileOutputStream(saveFilename);
@@ -325,17 +357,41 @@ public class RemoteCamera extends Activity {
 		ensureBluetooth();
 	}
 
+	private void connectWiiRemote() {
+		try {
+			WiiRemote wiiremote = WiiRemoteJ.findRemote();
+		} catch(InterruptedException irex) {
+		} catch(IOException ioex) {
+		}
+	}
+
+	private class WiiRemoteButtonListener extends WiiRemoteAdapter {
+		public void buttonInputReceived(WRButtonEvent evt) {
+			try {
+				if(evt.isPressed(WRButtonEvent.A)) {
+
+				}
+			} catch(Exception e) {
+
+			}
+		}
+	}
+
 	private Camera.ShutterCallback mShutterListener = new Camera.ShutterCallback() {
 		public void onShutter() {
-			if(mDebug) { Log.i(TAG, "onShutter"); }
+			if(mDebug) {
+				Log.i(TAG, "onShutter");
+			}
 		}
 	};
 
 	// 写真が撮影された際に呼び出されるコールバック
 	private Camera.PictureCallback mPictureCallback = new Camera.PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
-			
-			if(mDebug) { Log.i(TAG, "onPictureTaken"); }
+
+			if(mDebug) {
+				Log.i(TAG, "onPictureTaken");
+			}
 
 			if(null == data) {
 				return;
@@ -363,29 +419,28 @@ public class RemoteCamera extends Activity {
 			camera.startPreview();
 
 			/*
-			// 撮影したデータをシャッター側に送信
-			Bitmap jpg = BitmapFactory.decodeByteArray(data, 0, data.length);
-			Bitmap scaled = Bitmap.createScaledBitmap(jpg, jpg.getWidth() / 16,
-					jpg.getHeight() / 16, false);
-			if(scaled.getWidth() < 0 || scaled.getHeight() < 0) {
-				return;
-			}
-			
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			if(!scaled.compress(Bitmap.CompressFormat.PNG, 100, baos)) {
-				Toast.makeText(mContext, "Jpeg to ByteArray process was fail",
-						Toast.LENGTH_LONG).show();
-			}
-
-			WriteThread writeThread = new WriteThread(baos.toByteArray());
-			writeThread.start();
-			*/
+			 * // 撮影したデータをシャッター側に送信 Bitmap jpg =
+			 * BitmapFactory.decodeByteArray(data, 0, data.length); Bitmap
+			 * scaled = Bitmap.createScaledBitmap(jpg, jpg.getWidth() / 16,
+			 * jpg.getHeight() / 16, false); if(scaled.getWidth() < 0 ||
+			 * scaled.getHeight() < 0) { return; }
+			 * 
+			 * ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			 * if(!scaled.compress(Bitmap.CompressFormat.PNG, 100, baos)) {
+			 * Toast.makeText(mContext, "Jpeg to ByteArray process was fail",
+			 * Toast.LENGTH_LONG).show(); }
+			 * 
+			 * WriteThread writeThread = new WriteThread(baos.toByteArray());
+			 * writeThread.start();
+			 */
 		}
 	};
 
 	private Camera.PreviewCallback mPreviewCallback = new Camera.PreviewCallback() {
 		public void onPreviewFrame(byte[] data, Camera camera) {
-			if(mDebug) { Log.i(TAG, "onPreviewFrame"); }
+			if(mDebug) {
+				Log.i(TAG, "onPreviewFrame");
+			}
 
 			// プレビュー画像をYUV420からRGBに変換
 			Camera.Size size = camera.getParameters().getPreviewSize();
@@ -416,8 +471,11 @@ public class RemoteCamera extends Activity {
 				for(int i : rgb) {
 					dos.writeInt(i);
 				}
-			} catch(IOException e) { }
-			if(mDebug) { Log.i(TAG, "onPreviewFrame2"); }
+			} catch(IOException e) {
+			}
+			if(mDebug) {
+				Log.i(TAG, "onPreviewFrame2");
+			}
 			connect.write(baos.toByteArray());
 		}
 	};
@@ -458,7 +516,8 @@ public class RemoteCamera extends Activity {
 						mmCamera.cancelAutoFocus();
 						mmCamera.autoFocus(mAutofocusCallback);
 					} else {
-						mmCamera.takePicture(mmShutterListener, mmPictureCallback, mmJpegCallback);
+						mmCamera.takePicture(mmShutterListener,
+								mmPictureCallback, mmJpegCallback);
 					}
 				}
 				break;
@@ -489,7 +548,8 @@ public class RemoteCamera extends Activity {
 			@Override
 			public void onAutoFocus(boolean success, Camera aCamera) {
 				if(success) {
-					aCamera.takePicture(mmShutterListener, mmPictureCallback, mmJpegCallback);
+					aCamera.takePicture(mmShutterListener, mmPictureCallback,
+							mmJpegCallback);
 				}
 			}
 		};
@@ -502,23 +562,23 @@ public class RemoteCamera extends Activity {
 			BluetoothConnection connection = BluetoothConnection.getInstance();
 			byte[] buf = new byte[aLen[0]];
 			int count = 0;
-			
+
 			try {
 				while(true) {
 					count = connection.read(buf);
 				}
 			} catch(Exception e) {
 			}
-			
+
 			return count;
 		}
-		
+
 		@Override
 		protected void onPostExecute(Integer result) {
-			
+
 		}
 	}
-	
+
 	private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
 		public boolean onTouch(View view, MotionEvent motionevent) {
 			Message msg = mHandler.obtainMessage();
@@ -557,7 +617,9 @@ public class RemoteCamera extends Activity {
 	 */
 	public static void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width,
 			int height) {
-		if(mDebug) { Log.i(TAG, "decodeYUV420SP"); }
+		if(mDebug) {
+			Log.i(TAG, "decodeYUV420SP");
+		}
 		final int frameSize = width * height;
 
 		try {
@@ -595,9 +657,13 @@ public class RemoteCamera extends Activity {
 				}
 			}
 		} catch(Exception e) {
-			if(mDebug) { Log.e(TAG, "Exception"); }
+			if(mDebug) {
+				Log.e(TAG, "Exception");
+			}
 		}
 
-		if(mDebug) { Log.i(TAG, "end decode"); }
+		if(mDebug) {
+			Log.i(TAG, "end decode");
+		}
 	}
 }
