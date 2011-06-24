@@ -130,9 +130,6 @@ public class RemoteShutter extends Activity {
 		switch(item.getItemId()) {
 		// 接続待機開始
 		case R.id.item_accept:
-//			Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-//			discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-//			startActivity(discoverableIntent);
 			startServer();
 			mAcceptThread = null;
 			return true;
