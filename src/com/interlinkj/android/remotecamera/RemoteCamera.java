@@ -8,10 +8,12 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/*
 import wiiremotej.WiiRemote;
 import wiiremotej.WiiRemoteJ;
 import wiiremotej.event.WRButtonEvent;
 import wiiremotej.event.WiiRemoteAdapter;
+*/
 
 import com.interlinkj.android.remotecamera.R;
 
@@ -111,6 +113,7 @@ public class RemoteCamera extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		Resources res = getResources();
 		Window window = getWindow();
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -118,12 +121,12 @@ public class RemoteCamera extends Activity {
 		setContentView(R.layout.camera);
 
 		if(!ensureBluetooth()) {
-			Toast.makeText(this, "Device does not support Bluetooth",
+			Toast.makeText(this, res.getText(R.string.device_notsupport_bt),
 					Toast.LENGTH_LONG).show();
 		}
 		if(!ensureEnabled()) {
-			Toast.makeText(this, "Bluetooth is not enable", Toast.LENGTH_LONG)
-					.show();
+			Toast.makeText(this, res.getText(R.string.device_disable_bt),
+					Toast.LENGTH_LONG).show();
 		}
 
 		mContext = getApplicationContext();
@@ -251,7 +254,8 @@ public class RemoteCamera extends Activity {
 											.getDeviceAddress(deviceNames[i]);
 									// 規定の接続デバイスとして保存
 									Editor editor = prefs.edit();
-									editor.putString(RECENT_DEVICE_PREF_KEY, address);
+									editor.putString(RECENT_DEVICE_PREF_KEY,
+											address);
 									editor.commit();
 
 									connection.connect(address);
@@ -309,7 +313,8 @@ public class RemoteCamera extends Activity {
 		SharedPreferences pref = PreferenceManager
 				.getDefaultSharedPreferences(mContext);
 		String savePath = pref.getString(SAVE_PATH_PREF_KEY, null);
-		String filenameFormatString = pref.getString(FILENAME_FMT_PREF_KEY, null);
+		String filenameFormatString = pref.getString(FILENAME_FMT_PREF_KEY,
+				null);
 		File picturesPath = null;
 
 		if(savePath == null) {
@@ -321,7 +326,7 @@ public class RemoteCamera extends Activity {
 			editor.commit();
 		}
 		picturesPath = new File(savePath);
-		
+
 		SimpleDateFormat fmt;
 		if(filenameFormatString == null) {
 			// 保存ファイル名の書式指定が無い場合
@@ -329,7 +334,7 @@ public class RemoteCamera extends Activity {
 			Editor editor = pref.edit();
 			editor.putString(FILENAME_FMT_PREF_KEY, filenameFormatString);
 			editor.commit();
-		} 
+		}
 		fmt = new SimpleDateFormat(filenameFormatString);
 
 		try {
@@ -357,11 +362,17 @@ public class RemoteCamera extends Activity {
 		ensureBluetooth();
 	}
 
+	/*
 	private void connectWiiRemote() {
+		WiiRemote wiiremote = null;
 		try {
-			WiiRemote wiiremote = WiiRemoteJ.findRemote();
+			wiiremote = WiiRemoteJ.findRemote();
 		} catch(InterruptedException irex) {
 		} catch(IOException ioex) {
+		}
+		
+		if(null != wiiremote) {
+			wiiremote.addWiiRemoteListener(new WiiRemoteButtonListener());
 		}
 	}
 
@@ -369,13 +380,13 @@ public class RemoteCamera extends Activity {
 		public void buttonInputReceived(WRButtonEvent evt) {
 			try {
 				if(evt.isPressed(WRButtonEvent.A)) {
-
+					Toast.makeText(mContext, "WRButtonEvent.A", Toast.LENGTH_LONG);
 				}
 			} catch(Exception e) {
-
 			}
 		}
 	}
+	*/
 
 	private Camera.ShutterCallback mShutterListener = new Camera.ShutterCallback() {
 		public void onShutter() {

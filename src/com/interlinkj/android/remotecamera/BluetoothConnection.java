@@ -65,7 +65,8 @@ public class BluetoothConnection extends Connection {
 	public BluetoothSocket getSocket() {
 		return mSocket;
 	}
-	public synchronized void setHandler(Handler aHandler) {
+
+	public synchronized void setHandler(Handler aHandler) {
 		mHandler = aHandler;
 		notifyAll();
 	}
@@ -74,23 +75,25 @@ public class BluetoothConnection extends Connection {
 	public boolean isConnecting() {
 		return mConnectFlag;
 	}
-	
-	private class ConnectTask extends AsyncTask<BluetoothDevice, Integer, BluetoothSocket> {
+
+	private class ConnectTask extends
+			AsyncTask<BluetoothDevice, Integer, BluetoothSocket> {
 		Message mMsg;
-		
+
 		@Override
 		protected void onPreExecute() {
 			mMsg = mHandler.obtainMessage();
 		}
-		
+
 		@Override
 		protected BluetoothSocket doInBackground(BluetoothDevice... aDevice) {
 			try {
-				mSocket = aDevice[0].createRfcommSocketToServiceRecord(SERIAL_PORT_PROFILE);
+				mSocket = aDevice[0]
+						.createRfcommSocketToServiceRecord(SERIAL_PORT_PROFILE);
 			} catch(IOException e) {
-				
+
 			}
-			
+
 			try {
 				mSocket.connect();
 				mMsg.what = MESSAGE_CONNECT_SUCCESS;
@@ -98,14 +101,14 @@ public class BluetoothConnection extends Connection {
 				try {
 					mSocket.close();
 				} catch(IOException ex) {
-					
+
 				}
 				mMsg.what = MESSAGE_CONNECT_FAILED;
-			} 
-			
+			}
+
 			return mSocket;
 		}
-		
+
 		@Override
 		protected void onPostExecute(BluetoothSocket aSocket) {
 			mHandler.sendMessage(mMsg);
@@ -134,11 +137,10 @@ public class BluetoothConnection extends Connection {
 
 		public void run() {
 			// 通信開始前にデバイスの探索を中止させる
-			if(mAdapter.isDiscovering()) { 
+			if(mAdapter.isDiscovering()) {
 				mAdapter.cancelDiscovery();
 			}
 
-			
 			Message msg = mHandler.obtainMessage();
 			msg.obj = mmDevice.getName();
 			try {
@@ -177,7 +179,7 @@ public class BluetoothConnection extends Connection {
 			} catch(InterruptedException e) {
 			}
 		}
-		
+
 		BluetoothDevice device = mAdapter.getRemoteDevice(address);
 		ConnectThread th = new ConnectThread(device);
 		th.start();
@@ -204,7 +206,7 @@ public class BluetoothConnection extends Connection {
 
 		return count;
 	}
-	
+
 	@Override
 	public void write(byte[] aBuf) {
 		try {

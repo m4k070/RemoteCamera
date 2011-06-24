@@ -17,4 +17,6 @@
 	<string name="pref">設定</string>
 	<string name="pref_device">接続機器選択</string>
 	<string name="shutter">撮影</string>
+	<string name="device_notsupport_bt">このデバイスはBluetoothをサポートしていません</string>
+	<string name="device_disable_bt">Bluetoothが有効になっていません</string>
 </resources>

@@ -11,9 +11,9 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceActivity;
 
 public class CameraSetting extends PreferenceActivity {
-	public static final String RECENT_DEVICE_PREF_KEY = "device";
-	public static final String SAVE_PATH_PREF_KEY = "save_path";
-	public static final String FILENAME_FMT_PREF_KEY = "format";
+	public static final String RECENT_DEVICE_PREF_KEY = "device";		// 接続デバイス設定キー
+	public static final String SAVE_PATH_PREF_KEY = "save_path";		// 保存先パス設定キー
+	public static final String FILENAME_FMT_PREF_KEY = "format";		// 保存ファイル名書式設定キー
 
 	private BluetoothAdapter mAdapter;
 
@@ -70,6 +70,7 @@ public class CameraSetting extends PreferenceActivity {
 		}
 	};
 
+	// 設定変更後にサマリに値を表示する
 	private OnPreferenceChangeListener mOnEditTextChange = new OnPreferenceChangeListener() {
 		@Override
 		public boolean onPreferenceChange(Preference preference, Object newValue) {

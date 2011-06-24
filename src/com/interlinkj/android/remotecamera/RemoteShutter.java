@@ -54,7 +54,7 @@ public class RemoteShutter extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.shutter);
 
-		Button shutterBtn = (Button)findViewById(R.id.button1);
+		Button shutterBtn = (Button)findViewById(R.id.button_shoot);
 		shutterBtn.setOnClickListener(mOnClickListener);
 
 		if(!ensureBluetooth()) {
