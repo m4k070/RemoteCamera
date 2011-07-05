@@ -16,7 +16,7 @@ import android.view.SurfaceView;
 public class ShutterPreview extends SurfaceView implements
 		SurfaceHolder.Callback {
 	public Bitmap bitmap = null;
-	private SurfaceHolder mHolder;
+	private final SurfaceHolder mHolder;
 	private PreviewThread mThread;
 
 	// 描画用スレッド
@@ -57,25 +57,22 @@ public class ShutterPreview extends SurfaceView implements
 		mHolder.addCallback(this);
 	}
 
-	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
 		mThread.width = width;
 		mThread.height = height;
 	}
 
-	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		mThread = new PreviewThread();
 		mThread.running = true;
 		mThread.start();
 	}
 
-	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		mThread.running = false;
 		try {
 			mThread.join();
-		} catch(InterruptedException e) { }
+		} catch(InterruptedException ignored) { }
 	}
 }

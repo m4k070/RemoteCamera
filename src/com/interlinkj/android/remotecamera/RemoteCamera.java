@@ -1,22 +1,5 @@
 package com.interlinkj.android.remotecamera;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-/*
-import wiiremotej.WiiRemote;
-import wiiremotej.WiiRemoteJ;
-import wiiremotej.event.WRButtonEvent;
-import wiiremotej.event.WiiRemoteAdapter;
-*/
-
-import com.interlinkj.android.remotecamera.R;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -31,28 +14,26 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.Camera;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
+import android.os.*;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.GestureDetector;
+import android.view.*;
 import android.view.GestureDetector.SimpleOnGestureListener;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import static com.interlinkj.android.remotecamera.CameraSetting.RECENT_DEVICE_PREF_KEY;
-import static com.interlinkj.android.remotecamera.CameraSetting.SAVE_PATH_PREF_KEY;
-import static com.interlinkj.android.remotecamera.CameraSetting.FILENAME_FMT_PREF_KEY;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import static com.interlinkj.android.remotecamera.CameraSetting.*;
+
+/*
+import wiiremotej.WiiRemote;
+import wiiremotej.WiiRemoteJ;
+import wiiremotej.event.WRButtonEvent;
+import wiiremotej.event.WiiRemoteAdapter;
+*/
 
 public class RemoteCamera extends Activity {
 	public static final String TAG = "RemoteCamera";
@@ -556,7 +537,6 @@ public class RemoteCamera extends Activity {
 		}
 
 		private Camera.AutoFocusCallback mAutofocusCallback = new Camera.AutoFocusCallback() {
-			@Override
 			public void onAutoFocus(boolean success, Camera aCamera) {
 				if(success) {
 					aCamera.takePicture(mmShutterListener, mmPictureCallback,

@@ -10,7 +10,7 @@ import android.os.Handler;
 import android.os.Message;
 
 import static com.interlinkj.android.remotecamera.RemoteShutter.MESSAGE_DIALOG_SHOW;
-import static com.interlinkj.android.remotecamera.RemoteShutter.MESSAGE_DIALOG_DISMISS;;
+import static com.interlinkj.android.remotecamera.RemoteShutter.MESSAGE_DIALOG_DISMISS;
 
 public class AcceptThread extends Thread {
 	private final BluetoothServerSocket mServerSocket;

@@ -59,7 +59,6 @@ public class CameraSetting extends PreferenceActivity {
 	}
 
 	private OnPreferenceChangeListener mOnDeviceChange = new OnPreferenceChangeListener() {
-		@Override
 		public boolean onPreferenceChange(Preference preference, Object newValue) {
 			if(null != newValue) {
 				preference.setSummary(mAdapter
@@ -72,7 +71,6 @@ public class CameraSetting extends PreferenceActivity {
 
 	// 設定変更後にサマリに値を表示する
 	private OnPreferenceChangeListener mOnEditTextChange = new OnPreferenceChangeListener() {
-		@Override
 		public boolean onPreferenceChange(Preference preference, Object newValue) {
 			if(null != newValue) {
 				preference.setSummary((CharSequence)newValue);

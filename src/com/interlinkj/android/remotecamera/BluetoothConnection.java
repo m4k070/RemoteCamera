@@ -1,18 +1,20 @@
 package com.interlinkj.android.remotecamera;
 
-import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_CONNECT_FAILED;
-import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_CONNECT_SUCCESS;
+import android.bluetooth.*;
+import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Message;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import android.bluetooth.*;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Message;
+import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_CONNECT_FAILED;
+import static com.interlinkj.android.remotecamera.RemoteCamera.MESSAGE_CONNECT_SUCCESS;
 
 /**
  * Bluetooth接続を管理するクラス
@@ -56,7 +58,7 @@ public class BluetoothConnection extends Connection {
 			setOutputStream(mSocket.getOutputStream());
 			setInputStream(mSocket.getInputStream());
 			mConnectFlag = true;
-		} catch(Exception e) {
+		} catch(Exception ignored) {
 
 		}
 		notifyAll();
@@ -90,7 +92,7 @@ public class BluetoothConnection extends Connection {
 			try {
 				mSocket = aDevice[0]
 						.createRfcommSocketToServiceRecord(SERIAL_PORT_PROFILE);
-			} catch(IOException e) {
+			} catch(IOException ignored) {
 
 			}
 
@@ -100,7 +102,7 @@ public class BluetoothConnection extends Connection {
 			} catch(IOException e) {
 				try {
 					mSocket.close();
-				} catch(IOException ex) {
+				} catch(IOException ignored) {
 
 				}
 				mMsg.what = MESSAGE_CONNECT_FAILED;
@@ -130,7 +132,7 @@ public class BluetoothConnection extends Connection {
 				// UUIDを指定してrfcommのソケットを作成
 				tmp = device
 						.createRfcommSocketToServiceRecord(SERIAL_PORT_PROFILE);
-			} catch(IOException e) {
+			} catch(IOException ignored) {
 			}
 			mmSocket = tmp;
 		}
@@ -154,7 +156,7 @@ public class BluetoothConnection extends Connection {
 				// 例外が発生した場合はソケットを閉じ処理を抜ける
 				try {
 					mmSocket.close();
-				} catch(IOException closeException) {
+				} catch(IOException ignored) {
 				}
 				msg.what = MESSAGE_CONNECT_FAILED;
 			} finally {
@@ -166,7 +168,7 @@ public class BluetoothConnection extends Connection {
 		public void cancel() {
 			try {
 				mmSocket.close();
-			} catch(IOException e) {
+			} catch(IOException ignored) {
 			}
 		}
 	}
@@ -176,7 +178,7 @@ public class BluetoothConnection extends Connection {
 		while(mHandler == null) {
 			try {
 				wait();
-			} catch(InterruptedException e) {
+			} catch(InterruptedException ignored) {
 			}
 		}
 
@@ -201,7 +203,7 @@ public class BluetoothConnection extends Connection {
 
 		try {
 			count = mInStream.read(aBuf);
-		} catch(IOException e) {
+		} catch(IOException ignored) {
 		}
 
 		return count;
@@ -211,7 +213,7 @@ public class BluetoothConnection extends Connection {
 	public void write(byte[] aBuf) {
 		try {
 			mOutStream.write(aBuf);
-		} catch(IOException e) {
+		} catch(IOException ignored) {
 		}
 	}
 
@@ -223,7 +225,7 @@ public class BluetoothConnection extends Connection {
 			mOutStream = null;
 			mSocket = null;
 			mConnectFlag = false;
-		} catch(IOException e) {
+		} catch(IOException ignored) {
 		}
 	}
 
